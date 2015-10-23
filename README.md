@@ -27,23 +27,29 @@ template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-proc
 
 Step 2 - Once the AWS CloudFormation stack has successfully been created you can do select the Outputs tab and see the AWS parameters needed in the demo Twitter client in the steps below.
 
-Step 3 - Open twitter2kinesis.py in a text editor.
+Step 3 - To run the example application you need to update the code with AWS and Twitter information. Open twitter2kinesis.py in a text editor.
 
-Step 4 - Enter the values for the Amazon Kinesis stream name marked as `XXXX` with the actual Amazon Kinesis stream name you copied in step 2. Also replace `XXXX` for the following keys in the configuration files:
+Step 4 - To access the Twitter API you need to get [access tokens](https://dev.twitter.com/oauth/overview). Make sure you have these available and enter the information in the following parameters:
 
 The Twitter API parameters
-- consumer_key = ""
-- consumer_secret = ""
-- access_token_key = ""
-- access_token_secret = ""
+```
+consumer_key = ""
+consumer_secret = ""
+access_token_key = ""
+access_token_secret = ""
+```
+
+Step 5 - Enter the values for the AWS credentials and Amazon Kinesis stream name. This is the information from the Outputs tab of the CloudFormation template you got in step 2:
 
 AWS parameters - from the Outputs tab of the CloudFormation template
-- access_key = ""
-- secret_access_key = ""
-- region = ""
-- stream_name = ""
+```
+access_key = ""
+secret_access_key = ""
+region = ""
+stream_name = ""
+```
 
-Step 5 - If you haven't already got the Python modules boto3 and TwitterAPI installed, install them using [pip](http://pip.readthedocs.org/en/stable/installing/):
+Step 6 - Finally, before running the example code, you need [Python](https://www.python.org/) installed together with the Python modules boto3 and TwitterAPI. If you don't have the modules already, install them using [pip](http://pip.readthedocs.org/en/stable/installing/):
 
 ```
 pip install boto3 TwitterAPI
