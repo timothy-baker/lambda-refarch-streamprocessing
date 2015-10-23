@@ -10,41 +10,44 @@ does the following:
 
 -   Creates a DynamoDB table named &lt;stackname&gt;-EventData
 
--   Creates Lambda Function 1 (&lt;stackname&gt;-IoTDDBEventProcessor)
+-   Creates Lambda Function 1 (&lt;stackname&gt;-DDBEventProcessor)
     which receives records from Kinesis and writes records to the
     DynamoDB table
 
 -   Creates an IAM Role and Policy to allow the event processing Lambda
     function read from the Kinesis Stream and write to the DynamoDB table
 
+-   Creates an IAM user with permission to put events in the Kinesis stream
+    together with credentials for the user to use in an API client
+
 ## Instructions
 
 Step 1 -  Create an AWS CloudFormation stack with [the
-template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template) using a lowercase name for the stack. The AWS CloudFormation template completely automates the building, deployment, and configuration of all the components of the application.
+template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template). The AWS CloudFormation template completely automates the building, deployment, and configuration of all the components of the application.
 
-Step 2 - Copy the name of the Amazon Kinesis stream once the AWS CloudFormation stack has successfully been completed. You can do so by selecting the Output tab under the stack you created in the AWS CloudFormation management console. You will need the name of the Amazon Kinesis stream in the next step.
+Step 2 - Once the AWS CloudFormation stack has successfully been created you can do select the Outputs tab and see the AWS parameters needed in the demo Twitter client in the steps below.
 
-Step 3 - Update GetTwitterStream.exe.config in the EC2 instance. RDP into the Windows EC2 instance (ec2-ref-arch-streamprocessing). Go to the folder `C:\aws\download`. In Notepad, open the file GetTwitterStream.exe.config. This is the configuration file for the Windows console application named GetTwitterStream.exe.
+Step 3 - Open twitter2kinesis.py in a text editor.
 
-Step 4 - Replace the Amazon Kinesis stream name marked as `XXXX` with the actual Amazon Kinesis stream name you copied in step 2. Also replace `XXXX` for the following keys in the configuration files:
+Step 4 - Enter the values for the Amazon Kinesis stream name marked as `XXXX` with the actual Amazon Kinesis stream name you copied in step 2. Also replace `XXXX` for the following keys in the configuration files:
 
-- twitterConsumerKey
-- twitterConsumerSecret
-- userAccessToken
-- userAccessTokenSecret
-- AWSRegion
+The Twitter API parameters
+- consumer_key = ""
+- consumer_secret = ""
+- access_token_key = ""
+- access_token_secret = ""
+
+AWS parameters - from the Outputs tab of the CloudFormation template
+- access_key = ""
+- secret_access_key = ""
+- region = ""
+- stream_name = ""
 
 ## Test
 
-Step 1 - Run the Windows console application GetTwitterStream.exe. Open a command prompt window and change the directory to `C:\aws\download`. Type the following command:
+Step 1 - Run the twitter2kinesis.py Python application from the command line to start sending tweets into the Kinesis stream.
 
-```
-C:\aws\download> GetTwitterStream.exe X.
-```
-
-X is the number of minutes the program will receive sample tweets from Twitter.
-
-Step 2 - In the Amazon DynamoDB mManagement console, select the table named TwitterFeedsRefArchStreamProcessing and explore the records.
+Step 2 - In the Amazon DynamoDB management console, select the table named &lt;stackname&gt;-EventData and explore the records.
 
 ## Cleanup
 
