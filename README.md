@@ -29,7 +29,7 @@ Step 2 - Once the AWS CloudFormation stack has successfully been created you can
 
 Step 3 - To run the example application you need to update the code with AWS and Twitter information. Open twitter2kinesis.py in a text editor.
 
-Step 4 - To access the Twitter API you need to get [access tokens](https://dev.twitter.com/oauth/overview). Make sure you have these available and enter the information in the following parameters:
+Step 4 - To access the Twitter API you need to get [access tokens](https://dev.twitter.com/oauth/overview/application-owner-access-tokens). Make sure you have these available and enter the information in the following parameters:
 
 The Twitter API parameters
 ```
