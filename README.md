@@ -43,9 +43,19 @@ AWS parameters - from the Outputs tab of the CloudFormation template
 - region = ""
 - stream_name = ""
 
+Step 5 - If you haven't already got the Python modules boto3 and TwitterAPI installed, install them using [pip](http://pip.readthedocs.org/en/stable/installing/):
+
+```
+pip install boto3 TwitterAPI
+```
+
 ## Test
 
 Step 1 - Run the twitter2kinesis.py Python application from the command line to start sending tweets into the Kinesis stream.
+
+```
+python twitter2kinesis.py
+```
 
 Step 2 - In the Amazon DynamoDB management console, select the table named &lt;stackname&gt;-EventData and explore the records.
 
