@@ -1,0 +1,6 @@
+#!/bin/bash
+
+#BUCKET=awslambda-reference-architectures
+BUCKET=deployments-mikedeck
+aws s3 cp --acl public-read ddb_eventprocessor.zip s3://$BUCKET/stream-processing/ddb_eventprocessor.zip
+aws s3 cp --acl public-read config-helper.template s3://$BUCKET/stream-processing/config-helper.template

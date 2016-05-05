@@ -1,0 +1,3 @@
+#!/bin/bash
+
+zip ddb_eventprocessor.zip ddb_eventprocessor.js
