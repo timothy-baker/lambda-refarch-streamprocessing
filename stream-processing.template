@@ -5,34 +5,30 @@
     "Description" : "Template to set up Kinesis stream, Lambda functions, S3 bucket, DynamoDB table and related IAM roles for AWS Lambda Real-time Stream Processing Reference Architecture. PLEASE NOTE: The CloudFormation Stack Name must be all lowercase as it is used as part of the S3 bucket name. Otherwise the stack creation will fail.",
 
     "Parameters" : {
-        "LambdaS3Bucket" : {
-            "Type" : "String",
-            "Description" : "Name of S3 bucket where Lambda function packages are stored.",
-            "Default" : "awslambda-reference-architectures"
+        "CodeBucket": {
+          "Description": "S3 Bucket containing Lambda deployment packages and sub-stack templates",
+          "Type": "String",
+          "Default": "awslambda-reference-architectures"
         },
-        "LambdaDDBEventProcessorS3Key" : {
-            "Type" : "String",
-            "Default" : "stream-processing/ddb_eventprocessor.zip",
-            "Description" : "Name of S3 key for Zip with Stream Processing DynamoDB Event Processor Lambda function package."
-        },
-        "LambdaDDBEventProcessorHandler" : {
-            "Type" : "String",
-            "Default" : "ddb_eventprocessor.handler",
-            "Description" : "Name of handler for Stream Processing DynamoDB Event Processor Lambda function."
+        "CodeKeyPrefix": {
+          "Description": "The key prefix for all deployment packages and sub-stack templates within CodeBucket",
+          "Type": "String",
+          "Default": "stream-processing"
         }
     },
 
     "Resources" : {
-        "streamprocessingclient" : {
+        "TestClientUser" : {
             "Type" : "AWS::IAM::User"
         },
 
-        "ClientPolicy" : {
+        "TestClientPolicy" : {
             "Type" : "AWS::IAM::Policy",
             "Properties" : {
                 "PolicyName" : "StreamProcessingClientPolicy",
                 "PolicyDocument" : {
-                    "Statement" : [{
+                    "Statement" : [
+                    {
                         "Effect" : "Allow",
                         "Action" : [
                             "kinesis:Put*"
@@ -40,14 +36,14 @@
                         "Resource" : { "Fn::Join" : [ "", ["arn:aws:kinesis:", {"Ref" : "AWS::Region"} , ":", {"Ref" : "AWS::AccountId"}, ":stream/", {"Ref" : "EventStream"}]]}
                     }]
                 },
-                "Users" : [{ "Ref" : "streamprocessingclient" }]
+                "Users" : [{ "Ref" : "TestClientUser" }]
             }
         },
 
-        "ClientKeys" : {
+        "TestClientKeys" : {
             "Type" : "AWS::IAM::AccessKey",
             "Properties" : {
-                "UserName" : { "Ref" : "streamprocessingclient" }
+                "UserName" : { "Ref" : "TestClientUser" }
             }
         },
 
@@ -58,23 +54,23 @@
             }
         },
 
-        "DDBEventProcessor" : {
+        "DdbEventProcessorFunction" : {
             "Type" : "AWS::Lambda::Function",
             "Properties" : {
-                "Description" : "Stream Processing DDB Event Processor",
-                "Handler" : { "Ref" : "LambdaDDBEventProcessorHandler" },
+                "Description" : "A function that processes streaming events and persists them to a DynamoDB table",
+                "Handler" : "ddb_eventprocessor.handler",
                 "MemorySize" : 128,
-                "Role" : {"Fn::GetAtt" : ["EventProcessorExecutionRole", "Arn"] },
+                "Role" : {"Fn::GetAtt" : ["EventProcessorRole", "Arn"] },
                 "Timeout" : 10,
-                "Runtime" : "nodejs",
+                "Runtime" : "nodejs4.3",
                 "Code" : {
-                    "S3Bucket" : { "Ref" : "LambdaS3Bucket" },
-                    "S3Key" : { "Ref" : "LambdaDDBEventProcessorS3Key" }
+                    "S3Bucket" : { "Ref" : "CodeBucket" },
+                    "S3Key" : {"Fn::Join": ["/", [{"Ref": "CodeKeyPrefix"}, "ddb_eventprocessor.zip"]]}
                 }
             }
         },
 
-        "EventProcessorExecutionRole" : {
+        "EventProcessorRole" : {
             "Type" : "AWS::IAM::Role",
             "Properties" : {
                 "AssumeRolePolicyDocument" : {
@@ -89,7 +85,7 @@
                 },
                 "Path" : "/",
                 "Policies" : [ {
-                    "PolicyName" : "EventProcessorExecutionPolicy",
+                    "PolicyName" : "EventProcessorPolicy",
                     "PolicyDocument" : {
                         "Version" : "2012-10-17",
                         "Statement" : [
@@ -105,7 +101,14 @@
                                 "Action" : [
                                     "dynamodb:BatchWriteItem"
                                 ],
-                                "Resource" : { "Fn::Join" : [ "", ["arn:aws:dynamodb:", {"Ref" : "AWS::Region"} , ":", {"Ref" : "AWS::AccountId"} ,":table/", {"Ref": "AWS::StackName"}, "-EventData"]]}
+                                "Resource" : { "Fn::Join" : [ "", ["arn:aws:dynamodb:", {"Ref" : "AWS::Region"} , ":", {"Ref" : "AWS::AccountId"} ,":table/", {"Ref": "EventDataTable"}]]}
+                            },
+                            {
+                                "Effect" : "Allow",
+                                "Action" : [
+                                    "dynamodb:GetItem"
+                                ],
+                                "Resource" : { "Fn::Join" : [ "", ["arn:aws:dynamodb:", {"Ref" : "AWS::Region"} , ":", {"Ref" : "AWS::AccountId"} ,":table/", {"Ref": "ConfigTable"}]]}
                             }
                         ]
                     }
@@ -114,14 +117,14 @@
             }
         },
 
-        "MapLambdaEventSource": {
+        "DdbEventProcessorSourceMapping": {
             "Type": "AWS::Lambda::EventSourceMapping",
             "Properties": {
-                "FunctionName": {"Ref": "DDBEventProcessor"},
+                "FunctionName": {"Ref": "DdbEventProcessorFunction"},
                 "StartingPosition": "TRIM_HORIZON",
                 "BatchSize": 25,
                 "EventSourceArn": {
-                    "Fn::Join" : [ "", ["arn:aws:kinesis:", {"Ref" : "AWS::Region"} , ":", {"Ref" : "AWS::AccountId"}, ":stream/", {"Ref" : "EventStream"}]]
+                      "Fn::GetAtt" : [ "EventStream", "Arn"]
                 }
             }
         },
@@ -152,20 +155,63 @@
                 "ProvisionedThroughput" : {
                     "ReadCapacityUnits" : "1",
                     "WriteCapacityUnits" : "1"
-                },
-                "TableName" : {"Fn::Join": [ "", [{"Ref": "AWS::StackName"}, "-EventData"]]}
+                }
             }
+        },
+
+        "ConfigTable": {
+          "Type" : "AWS::DynamoDB::Table",
+          "Properties" : {
+            "TableName" : "StreamProcessingRefArchConfig",
+            "AttributeDefinitions" : [
+              {
+                "AttributeName" : "Environment",
+                "AttributeType" : "S"
+              }
+            ],
+            "KeySchema" : [
+              {
+                "AttributeName" : "Environment",
+                "KeyType" : "HASH"
+              }
+            ],
+            "ProvisionedThroughput" : {
+               "ReadCapacityUnits" : 1,
+               "WriteCapacityUnits" : 1
+            }
+          }
+        },
+
+        "ConfigHelperStack": {
+          "Type" : "AWS::CloudFormation::Stack",
+          "Properties" : {
+            "TemplateURL" : {"Fn::Join": ["/", ["https://s3.amazonaws.com", {"Ref": "CodeBucket"}, {"Ref": "CodeKeyPrefix"}, "config-helper.template"]]},
+            "Parameters" : {
+              "ConfigTable": { "Ref": "ConfigTable" }
+            },
+            "TimeoutInMinutes" : 2
+          }
+        },
+
+        "EventDataTableConfig": {
+          "Type": "Custom::ConfigSetting",
+          "Properties": {
+            "ServiceToken": { "Fn::GetAtt" : ["ConfigHelperStack", "Outputs.ServiceToken"] },
+            "Environment": "demo",
+            "Key": "EventDataTable",
+            "Value": { "Ref": "EventDataTable" }
+          }
         }
     },
 
     "Outputs" : {
         "AccessKeyId" : {
-            "Value" : { "Ref" : "ClientKeys" },
-            "Description" : "AWS Access Key Id of stream processing client user"
+            "Value" : { "Ref" : "TestClientKeys" },
+            "Description" : "AWS Access Key Id of IoT client user"
         },
         "SecretAccessKey" : {
-            "Value" : { "Fn::GetAtt" : ["ClientKeys", "SecretAccessKey"]},
-            "Description" : "AWS Secret Key of stream processing client user"
+            "Value" : { "Fn::GetAtt" : ["TestClientKeys", "SecretAccessKey"]},
+            "Description" : "AWS Secret Key of IoT client user"
         },
         "KinesisStream" : {
             "Value" : { "Ref" : "EventStream" },
@@ -174,6 +220,10 @@
         "Region" : {
             "Value" : { "Ref" : "AWS::Region" },
             "Description" : "The region this template was launched in."
+        },
+        "EventDataTable" : {
+            "Value" : { "Ref" : "EventDataTable" },
+            "Description" : "DynamoDB table that events will be stored in."
         }
     }
 }
