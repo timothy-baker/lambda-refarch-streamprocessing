@@ -66,7 +66,7 @@
                 "MemorySize" : 128,
                 "Role" : {"Fn::GetAtt" : ["EventProcessorExecutionRole", "Arn"] },
                 "Timeout" : 10,
-                "Runtime" : "nodejs",
+                "Runtime" : "nodejs6.10",
                 "Code" : {
                     "S3Bucket" : { "Ref" : "LambdaS3Bucket" },
                     "S3Key" : { "Ref" : "LambdaDDBEventProcessorS3Key" }
