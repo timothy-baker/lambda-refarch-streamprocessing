@@ -27,7 +27,7 @@
 
 步骤 2 - 一旦成功创建 AWS CloudFormation 堆栈，您就可以选择“输出”选项卡，然后查看在后续步骤的演示 Twitter 客户端中所需的 AWS 参数。
 
-步骤 3 - 运行您需要用来通过 AWS 和 Twitter 信息更新代码的示例应用程序。在文本编辑器中打开 twitter2kinesis.py。
+步骤 3 - 运行您需要用来通过 AWS 和 Twitter 信息更新代码的示例应用程序。在文本编辑器中打开 producer/twitter2kinesis.py。
 
 步骤 4 - 要访问 Twitter API，您需要获取 [访问令牌](https://dev.twitter.com/oauth/overview/application-owner-access-tokens)。确保您可以使用这些令牌，并在下面的参数中输入信息：
 
@@ -52,12 +52,12 @@ stream_name = ""
 步骤 6 - 最后，在运行示例代码之前，您需要安装 [Python](https://www.python.org/) 以及 Python 模块 boto3 和 TwitterAPI。如果您还没有这些模块，请使用 [pip](http://pip.readthedocs.org/en/stable/installing/) 来安装：
 
 ```
-pip install boto3 TwitterAPI
+pip install -r requirements.txt
 ```
 
 ## 测试
 
-步骤 1 - 从命令行运行 twitter2kinesis.py Python 应用程序，开始将推文发送到 Kinesis 流。
+步骤 1 - 从命令行运行 producer/twitter2kinesis.py Python 应用程序，开始将推文发送到 Kinesis 流。
 
 ```
 python twitter2kinesis.py

@@ -27,7 +27,7 @@
 
 ステップ 2 - AWS CloudFormation スタックが正常に作成されたら、[Outputs] タブを選択し、次のステップのデモ Twitter クライアントで必要な AWS パラメーターを表示できます。
 
-ステップ 3 - サンプルアプリケーションを実行するには、AWS および Twitter 情報でコードを更新する必要があります。テキストエディターで twitter2kinesis.py を開きます。
+ステップ 3 - サンプルアプリケーションを実行するには、AWS および Twitter 情報でコードを更新する必要があります。テキストエディターで producer/twitter2kinesis.py を開きます。
 
 ステップ 4 - Twitter API にアクセスするには、[アクセストークン](https://dev.twitter.com/oauth/overview/application-owner-access-tokens) を取得する必要があります。これらが利用可能であることを確認し、次のパラメーターに情報を入力します。
 
@@ -57,7 +57,7 @@ pip install boto3 TwitterAPI
 
 ## テスト
 
-ステップ 1 - コマンドラインから twitter2kinesis.py Python アプリケーションを実行し、Kinesis ストリームへのツィートの送信を開始します。
+ステップ 1 - コマンドラインから producer/twitter2kinesis.py Python アプリケーションを実行し、Kinesis ストリームへのツィートの送信を開始します。
 
 ```
 python twitter2kinesis.py

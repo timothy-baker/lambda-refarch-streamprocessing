@@ -27,7 +27,7 @@
 
 步驟 2 - 一旦成功建立 AWS CloudFormation 堆疊之後，您可以選擇 Outputs 索引標籤並查看以下步驟中的示範 Twitter 用戶端所需要的 AWS 參數。
 
-步驟 3 - 若要執行範例應用程式，您必須更新 AWS 的程式碼及 Twitter 資訊。在文字編輯器中開啟 twitter2kinesis.py。
+步驟 3 - 若要執行範例應用程式，您必須更新 AWS 的程式碼及 Twitter 資訊。在文字編輯器中開啟 producer/twitter2kinesis.py。
 
 步驟 4 - 若要存取 Twitter API，您必須取得 [存取符記](https://dev.twitter.com/oauth/overview/application-owner-access-tokens)。請確定您已備妥上述資料，然後在以下參數中輸入資訊：
 
@@ -57,7 +57,7 @@ pip install boto3 TwitterAPI
 
 ## 測試
 
-步驟 1 - 從命令列執行 twitter2kinesis.py Python 應用程式以開始將推文傳送至 Kinesis stream。
+步驟 1 - 從命令列執行 producer/twitter2kinesis.py Python 應用程式以開始將推文傳送至 Kinesis stream。
 
 ```
 python twitter2kinesis.py

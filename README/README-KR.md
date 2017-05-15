@@ -27,7 +27,7 @@ template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-proc
 
 2단계 - AWS CloudFormation 스택이 생성되면 Outputs 탭을 선택하여 아래 단계의 데모 Twitter 클라이언트에 필요한 AWS 파라미터를 볼 수 있습니다.
 
-3단계 - 예제 애플리케이션을 실행하려면 AWS 및 Twitter 정보로 코드를 업데이트해야 합니다. 텍스트 편집기에서 twitter2kinesis.py를 엽니다.
+3단계 - 예제 애플리케이션을 실행하려면 AWS 및 Twitter 정보로 코드를 업데이트해야 합니다. 텍스트 편집기에서 producer/twitter2kinesis.py를 엽니다.
 
 4단계 - Twitter API에 액세스하려면 [access tokens](https://dev.twitter.com/oauth/overview/application-owner-access-tokens)이 있어야 합니다. 해당 토큰을 사용할 수 있는지 확인하고 다음 파라미터에 정보를 입력합니다.
 
@@ -57,7 +57,7 @@ pip install boto3 TwitterAPI
 
 ## 테스트
 
-1단계 - 명령줄에서 twitter2kinesis.py Python 애플리케이션을 실행하여 Kinesis 스트림에 트윗을 전송합니다.
+1단계 - 명령줄에서 producer/twitter2kinesis.py Python 애플리케이션을 실행하여 Kinesis 스트림에 트윗을 전송합니다.
 
 ```
 python twitter2kinesis.py

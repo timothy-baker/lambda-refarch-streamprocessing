@@ -27,7 +27,7 @@ plantilla](https://s3.amazonaws.com/awslambda-reference-architectures/stream-pro
 
 Paso 2: Una vez creada correctamente la pila de AWS CloudFormation, puede seleccionar la pestaña Outputs y ver los parámetros de AWS necesarios en el cliente de Twitter de demostración en los pasos que se incluyen a continuación.
 
-Paso 3: Para ejecutar la aplicación de ejemplo necesita actualizar el código con información de AWS y Twitter. Abra twitter2kinesis.py en un editor de texto.
+Paso 3: Para ejecutar la aplicación de ejemplo necesita actualizar el código con información de AWS y Twitter. Abra producer/twitter2kinesis.py en un editor de texto.
 
 Paso 4: Para acceder a la API de Twitter necesita obtener [tokens de acceso](https://dev.twitter.com/oauth/overview/application-owner-access-tokens). Asegúrese de que dispone de estos tokens e introduzca la información en los siguientes parámetros:
 
@@ -52,12 +52,12 @@ stream_name = ""
 Paso 6: Por último, antes de ejecutar el código de ejemplo, necesita que [Python](https://www.python.org/) esté instalado junto con los módulos de Python boto3 y TwitterAPI. Si aún no tiene los módulos, instálelos mediante [pip](http://pip.readthedocs.org/en/stable/installing/):
 
 ```
-pip install boto3 TwitterAPI
+pip install -r requirements.txt
 ```
 
 ## Prueba
 
-Paso 1: Ejecute la aplicación Python twitter2kinesis.py desde la línea de comando para empezar a enviar tweets al flujo de Kinesis.
+Paso 1: Ejecute la aplicación Python producer/twitter2kinesis.py desde la línea de comando para empezar a enviar tweets al flujo de Kinesis.
 
 ```
 python twitter2kinesis.py
