@@ -5,7 +5,7 @@ README Languages:  [DE](README/README-DE.md) | [ES](README/README-ES.md) | [FR](
 
 You can use [AWS Lambda](http://aws.amazon.com/lambda/) and Amazon Kinesis to process real-time streaming data for application activity tracking, transaction order processing, click stream analysis, data cleansing, metrics generation, log filtering, indexing, social media analysis, and IoT device data telemetry and metering. The architecture described in this [diagram](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-streamprocessing.pdf) can be created with an AWS CloudFormation template.
 
-[The template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda_stream_processing.template)
+[The template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
 does the following:
 
 -   Creates a Kinesis Stream
@@ -25,7 +25,7 @@ does the following:
 ## Instructions
 
 Step 1 -  Create an AWS CloudFormation stack with [the
-template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template). The AWS CloudFormation template completely automates the building, deployment, and configuration of all the components of the application.
+template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml). The AWS CloudFormation template completely automates the building, deployment, and configuration of all the components of the application.
 
 Step 2 - Once the AWS CloudFormation stack has successfully been created you can do select the Outputs tab and see the AWS parameters needed in the demo Twitter client in the steps below.
 

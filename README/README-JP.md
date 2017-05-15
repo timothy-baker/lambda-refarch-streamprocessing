@@ -3,7 +3,7 @@
 
 [AWS Lambda](http://aws.amazon.com/lambda/) および Amazon Kinesis を使用して、アプリケーションのアクティビティ追跡、トランザクション注文処理、クリックストリーム分析、データクレンジング、メトリックス生成、ログフィルタリング、インデックス作成、ソーシャルメディア分析、および IoT デバイスデータテレメトリと測定のリアルタイムストリーミングデータを処理できます。この [図](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-streamprocessing.pdf) に示すアーキテクチャは、AWS CloudFormation テンプレートを使用して作成できます。
 
-[テンプレート](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda_stream_processing.template)
+[テンプレート](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
  は以下を実行します。
 
 -   Kinesis Stream を作成する
@@ -23,7 +23,7 @@
 ## 手順
 
 ステップ 1 - AWS CloudFormation スタックを [
-テンプレート](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template) で作成します。AWS CloudFormation テンプレートが、アプリケーションのすべてのコンポーネントの構築、デプロイ、および設定を完全に自動化します。
+テンプレート](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml) で作成します。AWS CloudFormation テンプレートが、アプリケーションのすべてのコンポーネントの構築、デプロイ、および設定を完全に自動化します。
 
 ステップ 2 - AWS CloudFormation スタックが正常に作成されたら、[Outputs] タブを選択し、次のステップのデモ Twitter クライアントで必要な AWS パラメーターを表示できます。
 

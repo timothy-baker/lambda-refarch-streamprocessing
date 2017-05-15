@@ -3,7 +3,7 @@
 
 Sie können mithilfe von [AWS Lambda](http://aws.amazon.com/lambda/) und Amazon Kinesis Streaming-Daten in Echtzeit verarbeiten, um Anwendungsaktivitäten zu verfolgen, Bestellungstransaktionen abzuwickeln, Clickstream-Analysen durchzuführen, Daten zu bereinigen, Metriken zu generieren, Protokolle zu filtern, Indizierungen durchzuführen, Social-Media-Aktivitäten zu analysieren und die Telemetrie und Messung von IoT-Gerätedaten durchzuführen. Die in diesem [Diagramm](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-streamprocessing.pdf) beschriebene Architektur kann mithilfe einer AWS CloudFormation-Vorlage erstellt werden.
 
-[Die Vorlage](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda_stream_processing.template)
+[Die Vorlage](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
 führt folgende Aktionen durch:
 
 -   Erstellen eines Kinesis-Streams
@@ -23,7 +23,7 @@ führt folgende Aktionen durch:
 ## Anweisungen
 
 Schritt 1 -   Erstellen Sie mithilfe [der
-Vorlage](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template) einen AWS CloudFormation-Stapel. Die AWS CloudFormation-Vorlage automatisiert die Erstellung, Bereitstellung und Konfiguration aller Komponenten einer Anwendung zur Gänze.
+Vorlage](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml) einen AWS CloudFormation-Stapel. Die AWS CloudFormation-Vorlage automatisiert die Erstellung, Bereitstellung und Konfiguration aller Komponenten einer Anwendung zur Gänze.
 
 Schritt 2 – Sobald der AWS CloudFormation-Stapel erfolgreich erstellt wurde, können Sie die AWS-Parameter, die in den folgenden Schritten im Twitter-Democlient benötigt werden, auf der Registerkarte "Outputs" sehen.
 

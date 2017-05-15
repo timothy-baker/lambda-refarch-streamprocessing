@@ -3,7 +3,7 @@
 
 С помощью [AWS Lambda](http://aws.amazon.com/lambda/) и Amazon Kinesis вы можете в реальном времени обрабатывать потоковые данные для отслеживания работы приложения, обработки заказов, анализа посещаемости, очистки данных, создания метрик, фильтрации журналов, индексации, анализа социальных сетей и обработки данных телеметрии устройств IoT. Архитектуру, описанную на этой [схеме](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-streamprocessing.pdf), можно создать с помощью шаблона AWS CloudFormation.
 
-[Шаблон](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda_stream_processing.template)
+[Шаблон](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
 выполняет следующие действия:
 
 - создает поток Kinesis;
@@ -23,7 +23,7 @@
 ## Инструкции
 
 Шаг 1. Создайте стек AWS CloudFormation с помощью
-[шаблона](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template). Этот шаблон AWS CloudFormation полностью автоматизирует создание, развертывание и настройку всех компонентов приложения.
+[шаблона](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml). Этот шаблон AWS CloudFormation полностью автоматизирует создание, развертывание и настройку всех компонентов приложения.
 
 Шаг 2. После успешного создания стека AWS CloudFormation вы можете открыть вкладку «Outputs» и просмотреть параметры AWS, необходимые для примера клиента Twitter, описанного далее.
 

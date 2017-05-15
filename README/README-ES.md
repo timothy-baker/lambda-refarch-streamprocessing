@@ -3,7 +3,7 @@
 
 Puede usar [AWS Lambda](http://aws.amazon.com/lambda/) y Amazon Kinesis para procesar el streaming de datos en tiempo real para el seguimiento de actividades de una aplicación, procesamiento de pedidos de transacciones, análisis de secuencias de clics, limpieza de datos, generación de métricas, filtrado de logs, indexación, análisis de redes sociales, y telemetría y medición de datos de dispositivos IoT. La arquitectura descrita en este [diagrama](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-streamprocessing.pdf) se puede crear con una plantilla de AWS CloudFormation.
 
-[La plantilla](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda_stream_processing.template)
+[La plantilla](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
 hace lo siguiente:
 
 -   Crea un flujo de Kinesis
@@ -23,7 +23,7 @@ hace lo siguiente:
 ## Instrucciones
 
 Paso 1: Cree una pila de AWS CloudFormation con [la
-plantilla](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template). La plantilla de AWS CloudFormation automatiza por completo la creación, implementación y configuración de todos los componentes de la aplicación.
+plantilla](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml). La plantilla de AWS CloudFormation automatiza por completo la creación, implementación y configuración de todos los componentes de la aplicación.
 
 Paso 2: Una vez creada correctamente la pila de AWS CloudFormation, puede seleccionar la pestaña Outputs y ver los parámetros de AWS necesarios en el cliente de Twitter de demostración en los pasos que se incluyen a continuación.
 

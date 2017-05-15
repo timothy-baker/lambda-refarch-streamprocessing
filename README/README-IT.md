@@ -3,7 +3,7 @@
 
 È possibile utilizzare [AWS Lambda](http://aws.amazon.com/lambda/) e Amazon Kinesis per elaborare i flussi di dati in tempo reale per monitorare l'attività dell'applicazione, elaborare l'ordine delle transazioni, analizzare il flusso dei clic, eliminare i dati, generare parametri, filtrare i registri, indicizzare, analizzare i social media ed eseguire misurazione e telemetria dei dati dei dispositivi di IoT. Questa architettura, descritta in questo [diagramma](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-streamprocessing.pdf), può essere creata con un modello di AWS CloudFormation.
 
-[Il modello](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda_stream_processing.template)
+[Il modello](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
 svolge le operazioni seguenti:
 
 -   Creazione di un flusso Kinesis
@@ -23,7 +23,7 @@ svolge le operazioni seguenti:
 ## Istruzioni
 
 Passaggio 1: creare uno stack di AWS CloudFormation con [il
-modello](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template). Il modello di AWS CloudFormation automatizza completamente la creazione, la distribuzione e la configurazione di tutti i componenti dell'applicazione.
+modello](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml). Il modello di AWS CloudFormation automatizza completamente la creazione, la distribuzione e la configurazione di tutti i componenti dell'applicazione.
 
 Passaggio 2: una volta creato lo stack di AWS CloudFormation, è possibile selezionare la scheda Outputs e visualizzare i parametri di AWS necessari nel client Twitter dimostrativo nei passaggi seguenti.
 

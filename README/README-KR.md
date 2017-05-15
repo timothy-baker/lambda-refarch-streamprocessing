@@ -3,7 +3,7 @@
 
 [AWS Lambda](http://aws.amazon.com/lambda/)와 Amazon Kinesis를 사용하여 애플리케이션 활동 추적, 트랜잭션 요청 처리, 클릭 스트림 분석, 데이터 정리, 측정치 생성, 로그 필터링, 인덱싱, 소셜 미디어 분석 및 IoT 장치 데이터 측정 및 계측을 위해 실시간 스트리밍 데이터를 처리할 수 있습니다. 이 [diagram](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-streamprocessing.pdf)에 설명된 아키텍처는 AWS CloudFormation 템플릿을 사용하여 만들 수 있습니다.
 
-[The template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda_stream_processing.template)으로
+[The template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)으로
 다음을 수행할 수 있습니다.
 
 -   Kinesis 스트림 생성
@@ -23,7 +23,7 @@
 ## 지침
 
 1단계 - [the
-template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template)으로 AWS CloudFormation 스택을 만듭니다. AWS CloudFormation 템플릿은 모든 애플리케이션 구성 요소의 구축, 배포 및 구성을 완전 자동화합니다.
+template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)으로 AWS CloudFormation 스택을 만듭니다. AWS CloudFormation 템플릿은 모든 애플리케이션 구성 요소의 구축, 배포 및 구성을 완전 자동화합니다.
 
 2단계 - AWS CloudFormation 스택이 생성되면 Outputs 탭을 선택하여 아래 단계의 데모 Twitter 클라이언트에 필요한 AWS 파라미터를 볼 수 있습니다.
 
