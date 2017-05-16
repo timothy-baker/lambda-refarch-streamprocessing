@@ -46,12 +46,12 @@ Resources:
       AttributeDefinitions:
         - AttributeName: Username
           AttributeType: S
-        - AttributeName: Timestamp
+        - AttributeName: Id
           AttributeType: S
       KeySchema:
         - AttributeName: Username
           KeyType: HASH
-        - AttributeName: Timestamp
+        - AttributeName: Id
           KeyType: RANGE
       ProvisionedThroughput:
         ReadCapacityUnits: '1'
