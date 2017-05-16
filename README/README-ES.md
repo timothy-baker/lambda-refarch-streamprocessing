@@ -25,6 +25,8 @@ hace lo siguiente:
 Paso 1: Cree una pila de AWS CloudFormation con [la
 plantilla](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml). La plantilla de AWS CloudFormation automatiza por completo la creación, implementación y configuración de todos los componentes de la aplicación.
 
+[![Launch Real-time Stream Processing into North Virginia with CloudFormation](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/images/cloudformation-launch-stack-button.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=lambda-refarch-streamprocessing&templateURL=https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
+
 Paso 2: Una vez creada correctamente la pila de AWS CloudFormation, puede seleccionar la pestaña Outputs y ver los parámetros de AWS necesarios en el cliente de Twitter de demostración en los pasos que se incluyen a continuación.
 
 Paso 3: Para ejecutar la aplicación de ejemplo necesita actualizar el código con información de AWS y Twitter. Abra producer/twitter2kinesis.py en un editor de texto.

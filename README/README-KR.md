@@ -25,6 +25,8 @@
 1단계 - [the
 template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)으로 AWS CloudFormation 스택을 만듭니다. AWS CloudFormation 템플릿은 모든 애플리케이션 구성 요소의 구축, 배포 및 구성을 완전 자동화합니다.
 
+[![Launch Real-time Stream Processing into North Virginia with CloudFormation](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/images/cloudformation-launch-stack-button.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=lambda-refarch-streamprocessing&templateURL=https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
+
 2단계 - AWS CloudFormation 스택이 생성되면 Outputs 탭을 선택하여 아래 단계의 데모 Twitter 클라이언트에 필요한 AWS 파라미터를 볼 수 있습니다.
 
 3단계 - 예제 애플리케이션을 실행하려면 AWS 및 Twitter 정보로 코드를 업데이트해야 합니다. 텍스트 편집기에서 producer/twitter2kinesis.py를 엽니다.

@@ -25,6 +25,8 @@ exécute les opérations suivantes :
 Étape 1 - Créer une stack AWS CloudFormation avec [le
 template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml). Le template AWS CloudFormation automatise entièrement la création, le déploiement et la configuration de tous les composants de l'application.
 
+[![Launch Real-time Stream Processing into North Virginia with CloudFormation](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/images/cloudformation-launch-stack-button.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=lambda-refarch-streamprocessing&templateURL=https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
+
 Étape 2 - Une fois que la stack AWS CloudFormation a été créée avec succès, vous pouvez sélectionner l'onglet Outputs et voir les paramètres AWS nécessaires dans le client Twitter de démonstration dans les étapes ci-dessous.
 
 Étape 3 - Pour exécuter l'exemple d'application, vous devez mettre à jour le code avec AWS et les informations de Twitter. Ouvrez producer/twitter2kinesis.py dans un éditeur de texte.

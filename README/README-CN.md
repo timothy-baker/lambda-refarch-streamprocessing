@@ -25,6 +25,8 @@
 步骤 1 - 使用 [
 模板](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml) 创建一个 AWS CloudFormation 堆栈。AWS CloudFormation 模板会完全自动执行应用程序的所有组件的构建、部署和配置操作。
 
+[![Launch Real-time Stream Processing into North Virginia with CloudFormation](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/images/cloudformation-launch-stack-button.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=lambda-refarch-streamprocessing&templateURL=https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
+
 步骤 2 - 一旦成功创建 AWS CloudFormation 堆栈，您就可以选择“输出”选项卡，然后查看在后续步骤的演示 Twitter 客户端中所需的 AWS 参数。
 
 步骤 3 - 运行您需要用来通过 AWS 和 Twitter 信息更新代码的示例应用程序。在文本编辑器中打开 producer/twitter2kinesis.py。

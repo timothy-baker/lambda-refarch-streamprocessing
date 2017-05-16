@@ -25,6 +25,8 @@
 ステップ 1 - AWS CloudFormation スタックを [
 テンプレート](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml) で作成します。AWS CloudFormation テンプレートが、アプリケーションのすべてのコンポーネントの構築、デプロイ、および設定を完全に自動化します。
 
+[![Launch Real-time Stream Processing into North Virginia with CloudFormation](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/images/cloudformation-launch-stack-button.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=lambda-refarch-streamprocessing&templateURL=https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
+
 ステップ 2 - AWS CloudFormation スタックが正常に作成されたら、[Outputs] タブを選択し、次のステップのデモ Twitter クライアントで必要な AWS パラメーターを表示できます。
 
 ステップ 3 - サンプルアプリケーションを実行するには、AWS および Twitter 情報でコードを更新する必要があります。テキストエディターで producer/twitter2kinesis.py を開きます。
