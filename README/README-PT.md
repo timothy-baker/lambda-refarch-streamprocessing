@@ -57,6 +57,8 @@ pip install boto3 TwitterAPI
 
 ## Teste
 
+![Client and Stream Processor Diagram](images/streamprocessing-diagram.png)
+
 Etapa 1 - Execute o aplicativo Python producer/twitter2kinesis.py na linha de comando para começar a enviar tweets no fluxo do Kinesis.
 
 ```

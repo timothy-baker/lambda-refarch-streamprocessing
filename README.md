@@ -61,6 +61,8 @@ pip install -r requirements.txt
 
 ## Test
 
+![Client and Stream Processor Diagram](images/streamprocessing-diagram.png)
+
 Step 1 - Run the producer/twitter2kinesis.py Python application from the command line to start sending tweets into the Kinesis stream.
 
 ```

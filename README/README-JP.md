@@ -59,6 +59,8 @@ pip install boto3 TwitterAPI
 
 ## テスト
 
+![Client and Stream Processor Diagram](images/streamprocessing-diagram.png)
+
 ステップ 1 - コマンドラインから producer/twitter2kinesis.py Python アプリケーションを実行し、Kinesis ストリームへのツィートの送信を開始します。
 
 ```

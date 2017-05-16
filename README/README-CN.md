@@ -59,6 +59,8 @@ pip install -r requirements.txt
 
 ## 测试
 
+![Client and Stream Processor Diagram](images/streamprocessing-diagram.png)
+
 步骤 1 - 从命令行运行 producer/twitter2kinesis.py Python 应用程序，开始将推文发送到 Kinesis 流。
 
 ```

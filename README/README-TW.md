@@ -57,6 +57,8 @@ pip install boto3 TwitterAPI
 
 ## 測試
 
+![Client and Stream Processor Diagram](images/streamprocessing-diagram.png)
+
 步驟 1 - 從命令列執行 producer/twitter2kinesis.py Python 應用程式以開始將推文傳送至 Kinesis stream。
 
 ```
