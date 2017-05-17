@@ -16,7 +16,6 @@ limitations under the License. */
 console.log('Loading function');
 
 var AWS = require('aws-sdk');
-
 var doc = new AWS.DynamoDB.DocumentClient();
 
 exports.handler = function(event, context) {
@@ -46,6 +45,7 @@ exports.handler = function(event, context) {
       PutRequest: {
           Item: {
               Username: tweet.user.name,
+              Id: tweet.id_str,
               Timestamp: new Date(tweet.created_at.replace(/( \+)/, ' UTC$1')).toISOString(),
               Message: tweet.text
           }
@@ -59,20 +59,19 @@ exports.handler = function(event, context) {
 };
 
 function writeItems(items, retries, context) {
-  doc.batchWrite({ RequestItems: items },
-    function(err, data) {
-      if (err) {
-        console.log('DDB call failed: ' + err, err.stack);
-        context.fail(err);
-      } else {
-        if(Object.keys(data.UnprocessedItems).length) {
+  doc.batchWrite({ RequestItems: items })
+    .promise()
+    .then((data) => {
+      if(Object.keys(data.UnprocessedItems).length) {
           console.log('Unprocessed items remain, retrying.');
           var delay = Math.min(Math.pow(2, retries) * 100, context.getRemainingTimeInMillis() - 200);
           setTimeout(function() {writeItems(data.UnprocessedItems, retries + 1)}, delay);
         } else {
           context.succeed();
         }
-      }
-    }
-  );
+    })
+    .catch((err) => {
+      console.log('DDB call failed: ' + err, err.stack);
+      return context.fail(err);
+    });   
 }

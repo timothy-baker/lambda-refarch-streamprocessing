@@ -3,7 +3,7 @@
 
 С помощью [AWS Lambda](http://aws.amazon.com/lambda/) и Amazon Kinesis вы можете в реальном времени обрабатывать потоковые данные для отслеживания работы приложения, обработки заказов, анализа посещаемости, очистки данных, создания метрик, фильтрации журналов, индексации, анализа социальных сетей и обработки данных телеметрии устройств IoT. Архитектуру, описанную на этой [схеме](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-streamprocessing.pdf), можно создать с помощью шаблона AWS CloudFormation.
 
-[Шаблон](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda_stream_processing.template)
+[Шаблон](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
 выполняет следующие действия:
 
 - создает поток Kinesis;
@@ -23,11 +23,11 @@
 ## Инструкции
 
 Шаг 1. Создайте стек AWS CloudFormation с помощью
-[шаблона](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template). Этот шаблон AWS CloudFormation полностью автоматизирует создание, развертывание и настройку всех компонентов приложения.
+[шаблона](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml). Этот шаблон AWS CloudFormation полностью автоматизирует создание, развертывание и настройку всех компонентов приложения.
 
 Шаг 2. После успешного создания стека AWS CloudFormation вы можете открыть вкладку «Outputs» и просмотреть параметры AWS, необходимые для примера клиента Twitter, описанного далее.
 
-Шаг 3. Для запуска примера приложения вам необходимо добавить в код данные AWS и Twitter. Откройте twitter2kinesis.py в текстовом редакторе.
+Шаг 3. Для запуска примера приложения вам необходимо добавить в код данные AWS и Twitter. Откройте producer/twitter2kinesis.py в текстовом редакторе.
 
 Шаг 4. Для доступа к Twitter API вам потребуются [маркеры доступа](https://dev.twitter.com/oauth/overview/application-owner-access-tokens). Убедитесь, что они у вас есть, и укажите значения для следующих параметров.
 
@@ -57,7 +57,9 @@ pip install boto3 TwitterAPI
 
 ## Тестирование
 
-Шаг 1. Запустите Python-приложение twitter2kinesis.py из командной строки, чтобы начать отправлять твиты в поток Kinesis.
+![Client and Stream Processor Diagram](images/streamprocessing-diagram.png)
+
+Шаг 1. Запустите Python-приложение producer/twitter2kinesis.py из командной строки, чтобы начать отправлять твиты в поток Kinesis.
 
 ```
 python twitter2kinesis.py

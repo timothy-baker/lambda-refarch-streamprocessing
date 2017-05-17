@@ -3,7 +3,7 @@
 
 [AWS Lambda](http://aws.amazon.com/lambda/) および Amazon Kinesis を使用して、アプリケーションのアクティビティ追跡、トランザクション注文処理、クリックストリーム分析、データクレンジング、メトリックス生成、ログフィルタリング、インデックス作成、ソーシャルメディア分析、および IoT デバイスデータテレメトリと測定のリアルタイムストリーミングデータを処理できます。この [図](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-streamprocessing.pdf) に示すアーキテクチャは、AWS CloudFormation テンプレートを使用して作成できます。
 
-[テンプレート](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda_stream_processing.template)
+[テンプレート](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
  は以下を実行します。
 
 -   Kinesis Stream を作成する
@@ -23,11 +23,13 @@
 ## 手順
 
 ステップ 1 - AWS CloudFormation スタックを [
-テンプレート](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template) で作成します。AWS CloudFormation テンプレートが、アプリケーションのすべてのコンポーネントの構築、デプロイ、および設定を完全に自動化します。
+テンプレート](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml) で作成します。AWS CloudFormation テンプレートが、アプリケーションのすべてのコンポーネントの構築、デプロイ、および設定を完全に自動化します。
+
+[![Launch Real-time Stream Processing into North Virginia with CloudFormation](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/images/cloudformation-launch-stack-button.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=lambda-refarch-streamprocessing&templateURL=https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
 
 ステップ 2 - AWS CloudFormation スタックが正常に作成されたら、[Outputs] タブを選択し、次のステップのデモ Twitter クライアントで必要な AWS パラメーターを表示できます。
 
-ステップ 3 - サンプルアプリケーションを実行するには、AWS および Twitter 情報でコードを更新する必要があります。テキストエディターで twitter2kinesis.py を開きます。
+ステップ 3 - サンプルアプリケーションを実行するには、AWS および Twitter 情報でコードを更新する必要があります。テキストエディターで producer/twitter2kinesis.py を開きます。
 
 ステップ 4 - Twitter API にアクセスするには、[アクセストークン](https://dev.twitter.com/oauth/overview/application-owner-access-tokens) を取得する必要があります。これらが利用可能であることを確認し、次のパラメーターに情報を入力します。
 
@@ -57,7 +59,9 @@ pip install boto3 TwitterAPI
 
 ## テスト
 
-ステップ 1 - コマンドラインから twitter2kinesis.py Python アプリケーションを実行し、Kinesis ストリームへのツィートの送信を開始します。
+![Client and Stream Processor Diagram](images/streamprocessing-diagram.png)
+
+ステップ 1 - コマンドラインから producer/twitter2kinesis.py Python アプリケーションを実行し、Kinesis ストリームへのツィートの送信を開始します。
 
 ```
 python twitter2kinesis.py

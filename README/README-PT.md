@@ -3,7 +3,7 @@
 
 Você pode usar [AWS Lambda](http://aws.amazon.com/lambda/) e Amazon Kinesis para processar dados de streaming em tempo real para rastreamento de atividades do aplicativo, processamento de pedidos de transação, análise de fluxo de clique, limpeza de dados, geração de métricas, filtragem de registros, indexação, análise de mídias sociais e medição e telemetria de dados de dispositivos IoT. A arquitetura descrita neste [diagrama](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-streamprocessing.pdf) pode ser criada com um modelo do AWS CloudFormation.
 
-[O modelo](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda_stream_processing.template)
+[O modelo](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
 faz o seguinte:
 
 -   Cria um fluxo do Kinesis
@@ -23,11 +23,11 @@ faz o seguinte:
 ## Instruções
 
 Etapa 1 - Crie uma pilha do AWS CloudFormation com [o
-modelo](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template). O modelo do AWS CloudFormation automatiza totalmente a criação, a implantação e a configuração de todos os componentes do aplicativo.
+modelo](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml). O modelo do AWS CloudFormation automatiza totalmente a criação, a implantação e a configuração de todos os componentes do aplicativo.
 
 Etapa 2 - Assim que a pilha do AWS CloudFormation tiver sido criada, você poderá selecionar a guia Resultados e ver os parâmetros de AWS necessários no cliente do Twitter de demonstração nas etapas abaixo.
 
-Etapa 3 - Para executar o aplicativo de exemplo, você precisa atualizar o código com informações do AWS e do Twitter. Abra twitter2kinesis.py em um editor de texto.
+Etapa 3 - Para executar o aplicativo de exemplo, você precisa atualizar o código com informações do AWS e do Twitter. Abra producer/twitter2kinesis.py em um editor de texto.
 
 Etapa 4 - Para acessar a API do Twitter, você precisa obter [tokens de acesso](https://dev.twitter.com/oauth/overview/application-owner-access-tokens). Verifique se eles estão disponíveis e insira as informações nos seguintes parâmetros:
 
@@ -57,7 +57,9 @@ pip install boto3 TwitterAPI
 
 ## Teste
 
-Etapa 1 - Execute o aplicativo Python twitter2kinesis.py na linha de comando para começar a enviar tweets no fluxo do Kinesis.
+![Client and Stream Processor Diagram](images/streamprocessing-diagram.png)
+
+Etapa 1 - Execute o aplicativo Python producer/twitter2kinesis.py na linha de comando para começar a enviar tweets no fluxo do Kinesis.
 
 ```
 python twitter2kinesis.py

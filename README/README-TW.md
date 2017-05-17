@@ -3,7 +3,7 @@
 
 您可以使用 [AWS Lambda](http://aws.amazon.com/lambda/) 與 Amazon Kinesis 處理即時串流資料以進行應用程式活動追蹤、交易訂單處理、點擊流分析、資料淨化、指標產生、日誌過濾、建立索引、社交媒體分析，以及 IoT 裝置資料遙測與計量。使用 AWS CloudFormation 範本可建立此 [示意圖](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-streamprocessing.pdf) 所描述的架構。
 
-[範本](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda_stream_processing.template)
+[範本](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
 執行以下項目：
 
 -   建立 Kinesis Stream
@@ -23,11 +23,11 @@
 ## 說明
 
 步驟 1 - 使用 [
-範本](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template) 建立 AWS CloudFormation 堆疊。AWS CloudFormation 範本會完全自動建立、部署及設定應用程式的所有元件。
+範本](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml) 建立 AWS CloudFormation 堆疊。AWS CloudFormation 範本會完全自動建立、部署及設定應用程式的所有元件。
 
 步驟 2 - 一旦成功建立 AWS CloudFormation 堆疊之後，您可以選擇 Outputs 索引標籤並查看以下步驟中的示範 Twitter 用戶端所需要的 AWS 參數。
 
-步驟 3 - 若要執行範例應用程式，您必須更新 AWS 的程式碼及 Twitter 資訊。在文字編輯器中開啟 twitter2kinesis.py。
+步驟 3 - 若要執行範例應用程式，您必須更新 AWS 的程式碼及 Twitter 資訊。在文字編輯器中開啟 producer/twitter2kinesis.py。
 
 步驟 4 - 若要存取 Twitter API，您必須取得 [存取符記](https://dev.twitter.com/oauth/overview/application-owner-access-tokens)。請確定您已備妥上述資料，然後在以下參數中輸入資訊：
 
@@ -57,7 +57,9 @@ pip install boto3 TwitterAPI
 
 ## 測試
 
-步驟 1 - 從命令列執行 twitter2kinesis.py Python 應用程式以開始將推文傳送至 Kinesis stream。
+![Client and Stream Processor Diagram](images/streamprocessing-diagram.png)
+
+步驟 1 - 從命令列執行 producer/twitter2kinesis.py Python 應用程式以開始將推文傳送至 Kinesis stream。
 
 ```
 python twitter2kinesis.py

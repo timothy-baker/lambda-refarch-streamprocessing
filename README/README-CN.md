@@ -3,7 +3,7 @@
 
 您可以使用 [AWS Lambda](http://aws.amazon.com/lambda/) 和 Amazon Kinesis 处理应用程序活动跟踪、交易订单处理、点击流分析、数据清理、指标生成、日志筛选、索引、社交媒体分析以及 IoT 设备数据遥测和计量的实时流数据。可以使用 AWS CloudFormation 模板创建在此 [示意图](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-streamprocessing.pdf) 中介绍的架构。
 
-使用 [模板](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda_stream_processing.template)
+使用 [模板](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
 可执行以下操作：
 
 -   创建 Kinesis 流
@@ -23,11 +23,13 @@
 ## 说明
 
 步骤 1 - 使用 [
-模板](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template) 创建一个 AWS CloudFormation 堆栈。AWS CloudFormation 模板会完全自动执行应用程序的所有组件的构建、部署和配置操作。
+模板](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml) 创建一个 AWS CloudFormation 堆栈。AWS CloudFormation 模板会完全自动执行应用程序的所有组件的构建、部署和配置操作。
+
+[![Launch Real-time Stream Processing into North Virginia with CloudFormation](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/images/cloudformation-launch-stack-button.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=lambda-refarch-streamprocessing&templateURL=https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
 
 步骤 2 - 一旦成功创建 AWS CloudFormation 堆栈，您就可以选择“输出”选项卡，然后查看在后续步骤的演示 Twitter 客户端中所需的 AWS 参数。
 
-步骤 3 - 运行您需要用来通过 AWS 和 Twitter 信息更新代码的示例应用程序。在文本编辑器中打开 twitter2kinesis.py。
+步骤 3 - 运行您需要用来通过 AWS 和 Twitter 信息更新代码的示例应用程序。在文本编辑器中打开 producer/twitter2kinesis.py。
 
 步骤 4 - 要访问 Twitter API，您需要获取 [访问令牌](https://dev.twitter.com/oauth/overview/application-owner-access-tokens)。确保您可以使用这些令牌，并在下面的参数中输入信息：
 
@@ -52,12 +54,14 @@ stream_name = ""
 步骤 6 - 最后，在运行示例代码之前，您需要安装 [Python](https://www.python.org/) 以及 Python 模块 boto3 和 TwitterAPI。如果您还没有这些模块，请使用 [pip](http://pip.readthedocs.org/en/stable/installing/) 来安装：
 
 ```
-pip install boto3 TwitterAPI
+pip install -r requirements.txt
 ```
 
 ## 测试
 
-步骤 1 - 从命令行运行 twitter2kinesis.py Python 应用程序，开始将推文发送到 Kinesis 流。
+![Client and Stream Processor Diagram](images/streamprocessing-diagram.png)
+
+步骤 1 - 从命令行运行 producer/twitter2kinesis.py Python 应用程序，开始将推文发送到 Kinesis 流。
 
 ```
 python twitter2kinesis.py

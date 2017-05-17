@@ -3,7 +3,7 @@
 
 Sie können mithilfe von [AWS Lambda](http://aws.amazon.com/lambda/) und Amazon Kinesis Streaming-Daten in Echtzeit verarbeiten, um Anwendungsaktivitäten zu verfolgen, Bestellungstransaktionen abzuwickeln, Clickstream-Analysen durchzuführen, Daten zu bereinigen, Metriken zu generieren, Protokolle zu filtern, Indizierungen durchzuführen, Social-Media-Aktivitäten zu analysieren und die Telemetrie und Messung von IoT-Gerätedaten durchzuführen. Die in diesem [Diagramm](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-streamprocessing.pdf) beschriebene Architektur kann mithilfe einer AWS CloudFormation-Vorlage erstellt werden.
 
-[Die Vorlage](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda_stream_processing.template)
+[Die Vorlage](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
 führt folgende Aktionen durch:
 
 -   Erstellen eines Kinesis-Streams
@@ -23,11 +23,13 @@ führt folgende Aktionen durch:
 ## Anweisungen
 
 Schritt 1 -   Erstellen Sie mithilfe [der
-Vorlage](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/lambda-refarch-stream-processing.template) einen AWS CloudFormation-Stapel. Die AWS CloudFormation-Vorlage automatisiert die Erstellung, Bereitstellung und Konfiguration aller Komponenten einer Anwendung zur Gänze.
+Vorlage](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml) einen AWS CloudFormation-Stapel. Die AWS CloudFormation-Vorlage automatisiert die Erstellung, Bereitstellung und Konfiguration aller Komponenten einer Anwendung zur Gänze.
+
+[![Launch Real-time Stream Processing into North Virginia with CloudFormation](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/images/cloudformation-launch-stack-button.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=lambda-refarch-streamprocessing&templateURL=https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
 
 Schritt 2 – Sobald der AWS CloudFormation-Stapel erfolgreich erstellt wurde, können Sie die AWS-Parameter, die in den folgenden Schritten im Twitter-Democlient benötigt werden, auf der Registerkarte "Outputs" sehen.
 
-Schritt 3 – Um die Beispielanwendung auszuführen, müssen Sie den Code dahingehend ändern, dass er die AWS- und Twitter-Informationen enthält. Öffnen Sie die Anwendung "twitter2kinesis.py" in einem Text-Editor.
+Schritt 3 – Um die Beispielanwendung auszuführen, müssen Sie den Code dahingehend ändern, dass er die AWS- und Twitter-Informationen enthält. Öffnen Sie die Anwendung "producer/twitter2kinesis.py" in einem Text-Editor.
 
 Schritt 4 – Um auf die Twitter-API zuzugreifen, benötigen Sie [Zugangs-Token](https://dev.twitter.com/oauth/overview/application-owner-access-tokens). Vergewissern Sie sich, dass Sie über die Zugangs-Token verfügen, und geben Sie die Informationen in die folgenden Parameter ein:
 
@@ -57,7 +59,9 @@ pip install boto3 TwitterAPI
 
 ## Test
 
-Schritt 1 – Führen Sie die Python-Anwendung "twitter2kinesis.py" über die Befehlszeile aus, um mit dem Senden von Tweets in den Kinesis-Stream zu beginnen.
+![Client and Stream Processor Diagram](images/streamprocessing-diagram.png)
+
+Schritt 1 – Führen Sie die Python-Anwendung "producer/twitter2kinesis.py" über die Befehlszeile aus, um mit dem Senden von Tweets in den Kinesis-Stream zu beginnen.
 
 ```
 python twitter2kinesis.py
