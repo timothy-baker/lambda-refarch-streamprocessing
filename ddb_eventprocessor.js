@@ -11,67 +11,103 @@ or in the "license" file accompanying this file. This file is distributed on an
 implied. See the License for the specific language governing permissions and
 limitations under the License. */
 
-// AWS Lambda function acting as Event Processor for AWS Lambda Stream Processing Reference Architecture
-
 console.log('Loading function');
 
-var AWS = require('aws-sdk');
-var doc = new AWS.DynamoDB.DocumentClient();
+const AWS = require('aws-sdk');
+const doc = new AWS.DynamoDB.DocumentClient();
+const DEBUG = true;
+logger = console.log;
+console.log = function() {
+  if (DEBUG) logger.apply(this, arguments);
+}
 
-exports.handler = function(event, context) {
-  console.log('Received event:', JSON.stringify(event, null, 2));
+/**
+ * AWS Lambda function acting as Event Processor for AWS Lambda Stream Processing
+ * Reference Architecture
+ */
+exports.handler = async function(event) {
+  console.log(`Received event: ${JSON.stringify(event, null, 2)}`);
 
-  var stackName = context.functionName.split('-').slice(0, -2).join('-');
-  var tableName = stackName + '-EventData';
+  // Set up the DynamoDB table name.
+  // TODO: Use an environment variable set in the CloudFormation Template for the DDB table name.
+  const stackName = context.functionName.split('-').slice(0, -2).join('-');
+  const tableName = stackName + '-EventData';
 
-  var putItems = [];
+  // Unpack the batched items from the event record
+  let tableItems = unpackItems(tableName, event.Records);
 
-  /*
-  * This assumes the batch size configured in the the event source mapping
-  * is set to a maximum of 25 records. Depending on the characteristics of
-  * your system it may make sense to consume larger batches from the stream
-  * and manage the batch sizes sent to DynamoDB within the funtion.
-  */
-  event.Records.forEach(function(record) {
+  try {
+    // Write the items to DynamoDB
+    return await writeItems(tableItems, 0);
+  } catch (err) {
+    return err;
+  }
+};
+
+/**
+ * This assumes the batch size configured in the the event source mapping
+ * is set to a maximum of 25 records. Depending on the characteristics of
+ * your system it may make sense to consume larger batches from the stream
+ * and manage the batch sizes sent to DynamoDB within the funtion.
+ * @param {String} tableName DynamoDB table name
+ * @param {[]} records Array of records from the lambda event object
+ */
+function unpackItems(tableName, records) {
+  let putItems = [];
+  records.forEach(function(record) {
     payload = new Buffer(record.kinesis.data, 'base64').toString('ascii');
-    console.log('Decoded payload:', payload);
+    console.log(`Decoded payload: ${payload}`);
 
-    var tweet = JSON.parse(payload);
+    let tweet = JSON.parse(payload);
+    console.log(`User: ${tweet.user.name}`);
+    console.log(`Timestamp: ${tweet.created_at}`);
 
-    console.log('User:', tweet.user.name);
-    console.log('Timestamp:', tweet.created_at);
-
+    /*
+     * Reference the documentation for the DynamoDB Document Client batchWrite method to review the data format:
+     * https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#batchWrite-property
+     */
     putItems.push({
       PutRequest: {
-          Item: {
-              Username: tweet.user.name,
-              Id: tweet.id_str,
-              Timestamp: new Date(tweet.created_at.replace(/( \+)/, ' UTC$1')).toISOString(),
-              Message: tweet.text
-          }
+        Item: {
+          Username: tweet.user.name,
+          Id: tweet.id_str,
+          Timestamp: new Date(tweet.created_at.replace(/( \+)/, ' UTC$1')).toISOString(),
+          Message: tweet.text
+        }
       }
     });
   });
 
-  var tableItems = {};
-  tableItems[tableName] = putItems;
-  writeItems(tableItems, 0, context);
-};
 
-function writeItems(items, retries, context) {
-  doc.batchWrite({ RequestItems: items })
-    .promise()
-    .then((data) => {
-      if(Object.keys(data.UnprocessedItems).length) {
-          console.log('Unprocessed items remain, retrying.');
-          var delay = Math.min(Math.pow(2, retries) * 100, context.getRemainingTimeInMillis() - 200);
-          setTimeout(function() {writeItems(data.UnprocessedItems, retries + 1)}, delay);
+  let tableItems = {};
+  tableItems[tableName] = putItems;
+
+  return tableItems;
+}
+
+/**
+ * Use the batchWrite method to persist the records to DynamoDB.
+ * @param {Object} items AWS.DynamoDB.DocumentClient batchWrite items
+ * @param {Number} retries Number of retries
+ */
+async function writeItems(items, retries) {
+  return new Promise(function(accept, reject) {
+    doc.batchWrite({ RequestItems: items }, function (err, data) {
+      if (err) {
+        console.log(`DDB call failed: ${err}`, err.stack);
+        reject(err);
+      }
+      else {
+        // Check for unprocessed items and retry if neccessary
+        let unprocessedCount = Object.keys(data.UnprocessedItems).length;
+        if(unprocessedCount) {
+          console.log(`${unprocessedCount} unprocessed items remain, retrying.`);
+          let delay = Math.min(Math.pow(2, retries) * 100, context.getRemainingTimeInMillis() - 200);
+          setTimeout(() => writeItems(data.UnprocessedItems, retries + 1), delay);
         } else {
-          context.succeed();
+          accept(data);
         }
-    })
-    .catch((err) => {
-      console.log('DDB call failed: ' + err, err.stack);
-      return context.fail(err);
-    });   
+      };
+    });
+  });
 }
