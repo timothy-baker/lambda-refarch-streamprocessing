@@ -25,11 +25,12 @@ Resources:
       Description: Stream Processing DDB Event Processor
       Handler: !Ref LambdaDDBEventProcessorHandler
       MemorySize: 128
-      Role: !GetAtt 
-        - EventProcessorExecutionRole
-        - Arn
-      Timeout: 10
-      Runtime: nodejs6.10
+      Role: !GetAtt EventProcessorExecutionRole.Arn
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref ${EventDataTable}
+      Timeout: 20
+      Runtime: nodejs10.x
       CodeUri:
         Bucket: !Ref LambdaS3Bucket
         Key: !Ref LambdaDDBEventProcessorS3Key
@@ -60,6 +61,9 @@ Resources:
         - ''
         - - !Ref 'AWS::StackName'
           - '-EventData'
+      TimeToLiveSpecification:
+        AttributeName: ExpirationTime
+        Enabled: true
   EventProcessorExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:

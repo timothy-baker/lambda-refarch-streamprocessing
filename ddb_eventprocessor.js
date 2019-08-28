@@ -15,6 +15,17 @@ console.log('Loading function');
 
 const AWS = require('aws-sdk');
 const doc = new AWS.DynamoDB.DocumentClient();
+const ddbTableName = process.env.DDB_TABLE;
+
+// Set a TTL for DynamoDB records:
+// https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/howitworks-ttl.html
+const today = new Date();
+const expireIn = 2; // days
+let expireDate = new Date();
+expireDate.setDate(today.getDate() + expireIn);
+const expireTimeEpoch = Math.floor(expireDate / 1000);
+
+// Enable of disable the debug logs
 const DEBUG = true;
 logger = console.log;
 console.log = function() {
@@ -28,13 +39,8 @@ console.log = function() {
 exports.handler = async function(event) {
   console.log(`Received event: ${JSON.stringify(event, null, 2)}`);
 
-  // Set up the DynamoDB table name.
-  // TODO: Use an environment variable set in the CloudFormation Template for the DDB table name.
-  const stackName = context.functionName.split('-').slice(0, -2).join('-');
-  const tableName = stackName + '-EventData';
-
   // Unpack the batched items from the event record
-  let tableItems = unpackItems(tableName, event.Records);
+  let tableItems = unpackItems(event.Records);
 
   try {
     // Write the items to DynamoDB
@@ -52,7 +58,7 @@ exports.handler = async function(event) {
  * @param {String} tableName DynamoDB table name
  * @param {[]} records Array of records from the lambda event object
  */
-function unpackItems(tableName, records) {
+function unpackItems(records) {
   let putItems = [];
   records.forEach(function(record) {
     payload = new Buffer(record.kinesis.data, 'base64').toString('ascii');
@@ -72,7 +78,8 @@ function unpackItems(tableName, records) {
           Username: tweet.user.name,
           Id: tweet.id_str,
           Timestamp: new Date(tweet.created_at.replace(/( \+)/, ' UTC$1')).toISOString(),
-          Message: tweet.text
+          Message: tweet.text,
+          ExpirationTime: expireTimeEpoch
         }
       }
     });
@@ -80,7 +87,7 @@ function unpackItems(tableName, records) {
 
 
   let tableItems = {};
-  tableItems[tableName] = putItems;
+  tableItems[ddbTableName] = putItems;
 
   return tableItems;
 }
