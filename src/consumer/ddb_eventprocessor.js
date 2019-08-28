@@ -27,7 +27,7 @@ const expireTimeEpoch = Math.floor(expireDate / 1000);
 
 // Enable of disable the debug logs
 const DEBUG = true;
-logger = console.log;
+const logger = console.log;
 console.log = function() {
   if (DEBUG) logger.apply(this, arguments);
 }
@@ -84,7 +84,6 @@ function unpackItems(records) {
       }
     });
   });
-
 
   let tableItems = {};
   tableItems[ddbTableName] = putItems;

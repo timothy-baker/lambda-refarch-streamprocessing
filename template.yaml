@@ -1,19 +1,19 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: "Template to set up Kinesis stream, Lambda functions, S3 bucket, DynamoDB table and related IAM roles for AWS Lambda Real-time Stream Processing Reference Architecture. PLEASE NOTE: The CloudFormation Stack Name must be all lowercase as it is used as part of the S3 bucket name. Otherwise the stack creation will fail."
-Parameters: 
-  LambdaS3Bucket: 
-    Type: String
-    Default: awslambda-reference-architectures
-    Description: Name of S3 bucket where Lambda function packages are stored.
-  LambdaDDBEventProcessorS3Key:
-    Type : String
-    Default : stream-processing/ddb_eventprocessor.zip
-    Description : Name of S3 key for Zip with Stream Processing DynamoDB Event Processor Lambda function package.
-  LambdaDDBEventProcessorHandler:
-    Type : String
-    Default : ddb_eventprocessor.handler
-    Description : Name of handler for Stream Processing DynamoDB Event Processor Lambda function.
+# Parameters: 
+#   LambdaS3Bucket: 
+#     Type: String
+#     Default: awslambda-reference-architectures
+#     Description: Name of S3 bucket where Lambda function packages are stored.
+#   LambdaDDBEventProcessorS3Key:
+#     Type : String
+#     Default : stream-processing/ddb_eventprocessor.zip
+#     Description : Name of S3 key for Zip with Stream Processing DynamoDB Event Processor Lambda function package.
+#   LambdaDDBEventProcessorHandler:
+#     Type : String
+#     Default : ddb_eventprocessor.handler
+#     Description : Name of handler for Stream Processing DynamoDB Event Processor Lambda function.
 Resources:
   EventStream:
     Type: 'AWS::Kinesis::Stream'
@@ -23,17 +23,18 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Properties:
       Description: Stream Processing DDB Event Processor
-      Handler: !Ref LambdaDDBEventProcessorHandler
+      # Handler: !Ref LambdaDDBEventProcessorHandler
       MemorySize: 128
       Role: !GetAtt EventProcessorExecutionRole.Arn
       Environment:
         Variables:
-          DDB_TABLE: !Ref ${EventDataTable}
+          DDB_TABLE: !Ref EventDataTable
       Timeout: 20
       Runtime: nodejs10.x
-      CodeUri:
-        Bucket: !Ref LambdaS3Bucket
-        Key: !Ref LambdaDDBEventProcessorS3Key
+      CodeUri: src/consumer
+      Handler: ddb_eventprocessor.handler
+        # Bucket: !Ref LambdaS3Bucket
+        # Key: !Ref LambdaDDBEventProcessorS3Key
       Events:
         Stream:
           Type: Kinesis
