@@ -1,0 +1,50 @@
+Description: >
+    Setup common cloudwatch alarms to monitor stream processing
+Parameters:
+  
+  AdminEmail:
+    Description: monitor 
+    Type: String
+    Default: '<email.com>'
+
+
+Resources:
+  Topic:
+    Type: 'AWS::SNS::Topic'
+    Properties:
+      DisplayName: 'Stream Processing Alarms'
+
+  TopicEndpointSubscription:
+    DependsOn: TopicPolicy
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !Ref AdminEmail
+      Protocol: email
+      TopicArn: !Ref Topic
+
+  # useful cloudwatch alarms to monitor ES domain  
+  MonitorIteratorAge:
+    DependsOn: TopicEndpointSubscription
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+        - !Ref Topic
+      AlarmDescription: 'Iterator Age'
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: StreamName
+          Value: <StreamName here>
+
+      EvaluationPeriods: 4
+      DatapointsToAlarm: 3
+      MetricName: GetRecords.IteratorAgeMilliseconds
+      Namespace: AWS/Kinesis
+      Period: 300
+      Statistic: Average
+      # milliseconds 
+      Threshold: 6000000
+
+  
+
+
+
