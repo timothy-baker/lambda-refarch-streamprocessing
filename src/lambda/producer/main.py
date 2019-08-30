@@ -17,7 +17,6 @@ import json
 import logging
 import os
 import sys
-import base64, hmac, hashlib
 
 from TwitterAPI import TwitterAPI
 
