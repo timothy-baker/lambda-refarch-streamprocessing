@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import sys
+import base64, hmac, hashlib
 
 from TwitterAPI import TwitterAPI
 
@@ -34,11 +35,38 @@ except Exception as e:
     logger.exception("Environment Variable KINESIS_STREAM_NAME not set")
     raise
 
+def getTwitterCreds():
+    ssm = boto3.client('ssm')
+    try:
+        response = ssm.get_parameters(
+            Names=[
+                '/twitter/consumer_key',
+                '/twitter/consumer_secret',
+                '/twitter/access_token_key',
+                '/twitter/access_token_secret',
+            ],
+            WithDecryption=True
+        )
+        params = {x['Name']: x for x in response['Parameters']}
+        creds = {}
+        creds['twitter_consumer_key'] = params['/twitter/consumer_key']['Value']
+        creds['twitter_consumer_secret'] = params['/twitter/consumer_secret']['Value']
+        creds['twitter_access_token_key'] = params['/twitter/access_token_key']['Value']
+        creds['twitter_access_token_secret'] = params['/twitter/access_token_secret']['Value']
+        return creds
+    except:
+        print('Problem getting keys from SSM')
+        return {
+            'statusCode': 501,
+            'body': 'Problem getting Twitter credentials from AWS SSM'
+        }
+
 # Twitter OAuth Tokens
-consumer_key = ""
-consumer_secret = ""
-access_token_key = ""
-access_token_secret = ""
+twitterCreds = getTwitterCreds()
+consumer_key = twitterCreds['twitter_consumer_key']
+consumer_secret = twitterCreds['twitter_consumer_secret']
+access_token_key = twitterCreds['twitter_access_token_key']
+access_token_secret = twitterCreds['twitter_access_token_secret']
 
 # Setting up Twitter and Kinesis objects
 api = TwitterAPI(consumer_key, consumer_secret, access_token_key, access_token_secret)

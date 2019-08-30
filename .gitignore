@@ -1,3 +1,4 @@
 temp/
 packaged.yaml
 .aws-**
+producer-template-packaged.yaml

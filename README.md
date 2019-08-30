@@ -33,14 +33,22 @@ Step 2 - Once the AWS CloudFormation stack has successfully been created you can
 
 Step 3 - To run the example application you need to update the code with AWS and Twitter information. Open producer/twitter2kinesis.py in a text editor.
 
-Step 4 - To access the Twitter API you need to get [access tokens](https://dev.twitter.com/oauth/overview/application-owner-access-tokens). Make sure you have these available and enter the information in the following parameters:
+Step 4 - To access the Twitter API you need to get [access tokens](https://dev.twitter.com/oauth/overview/application-owner-access-tokens). Make sure you have these available. As a best practice we are not hard coding these credentials in our Lambda functions. Instead, we are using AWS SSM Parameter Store to store them, and get them from within the Lambda code. The Lambda code expects the parameters named as below:
 
-The Twitter API parameters
 ```
-consumer_key = ""
-consumer_secret = ""
-access_token_key = ""
-access_token_secret = ""
+/twitter/consumer_key
+/twitter/consumer_secret
+/twitter/access_token_key
+/twitter/access_token_secret
+```
+
+You can add these parameters manually by going to AWS Systems Manager > Parameter Store on the AWS Web Management Console, or using the it's easier to add them using below commands on the AWS CLI, make sure the credentials you are using in your CLI are allowed to perform the ```put-parameter``` and API call.
+
+```
+aws ssm put-parameter --name "/twitter/consumer_key" --value "xxx" --type "SecureString"
+aws ssm put-parameter --name "/twitter/consumer_secret" --value "yyy" --type "SecureString"
+aws ssm put-parameter --name "/twitter/access_token_key" --value "zzz" --type "SecureString"
+aws ssm put-parameter --name "/twitter/access_token_secret" --value "jjj" --type "SecureString"
 ```
 
 Step 5 - Enter the values for the AWS credentials and Amazon Kinesis stream name. This is the information from the Outputs tab of the CloudFormation template you got in step 2:

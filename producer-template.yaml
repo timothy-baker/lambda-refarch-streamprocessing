@@ -55,6 +55,7 @@ Resources:
                 Resource: !GetAtt EventStream.Arn
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - 'arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess'
 
 Outputs:
   KinesisEventProducerArn:
