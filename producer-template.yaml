@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "Template to schedule lambda to scrape twitter api and put events into kinesis stream"
+Resources:
+  EventStream:
+    Type: 'AWS::Kinesis::Stream'
+    Properties:
+      ShardCount: 2
+
+  KinesisEventProducer:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Description: Scrape twitter and put events into Kinesis
+      MemorySize: 512
+      Role: !GetAtt KinesisEventProducerExecutionRole.Arn
+      Environment:
+        Variables:
+          LOG_LEVEL: INFO
+          KINESIS_STREAM_NAME: !Ref EventStream
+      Timeout: 600
+      Runtime: python3.7
+      CodeUri: src/lambda/producer
+      Handler: main.lambda_handler
+      Events:
+# https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html        
+        TriggerProducerLambda:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+            Name: trigger-kinesis-event-producer
+            Description: trigger kinesis event producer every 5 minutes 
+            Enabled: True
+
+  KinesisEventProducerExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: EventProcessorExecutionPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'kinesis:PutRecord'
+                Resource: !GetAtt EventStream.Arn
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+
+Outputs:
+  KinesisEventProducerArn:
+    Value: !GetAtt KinesisEventProducer.Arn
