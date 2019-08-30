@@ -74,3 +74,21 @@ Step 2 - In the Amazon DynamoDB management console, select the table named &lt;s
 ## Cleanup
 
 To remove all created resources, delete the AWS CloudFormation stack.
+
+
+
+## Update SAM 
+
+```bash 
+pip install --upgrade pip --user
+hash -r
+pip install --upgrade aws-sam-cli --user
+```
+
+## Kinesis Producer as Lambda
+
+```bash
+sam build -t producer-template.yaml
+sam package --s3-bucket <your-bucket-name> --output-template-file producer-template-packaged.yaml
+sam deploy --template-file producer-template-packaged.yaml --stack-name <stack-name> --capabilities CAPABILITY_IAM
+```
