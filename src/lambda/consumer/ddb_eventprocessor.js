@@ -42,12 +42,8 @@ exports.handler = async function(event) {
   // Unpack the batched items from the event record
   let tableItems = unpackItems(event.Records);
 
-  try {
-    // Write the items to DynamoDB
-    return await writeItems(tableItems, 0);
-  } catch (err) {
-    return err;
-  }
+  // return await writeItems(tableItems, 0);
+  return await writeItems(tableItems);
 };
 
 /**
@@ -61,17 +57,15 @@ exports.handler = async function(event) {
 function unpackItems(records) {
   let putItems = [];
   records.forEach(function(record) {
-    payload = new Buffer(record.kinesis.data, 'base64').toString('ascii');
+    let payload = new Buffer(record.kinesis.data, 'base64').toString('ascii');
     console.log(`Decoded payload: ${payload}`);
 
     let tweet = JSON.parse(payload);
     console.log(`User: ${tweet.user.name}`);
     console.log(`Timestamp: ${tweet.created_at}`);
 
-    /*
-     * Reference the documentation for the DynamoDB Document Client batchWrite method to review the data format:
-     * https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#batchWrite-property
-     */
+    //Reference the documentation for the DynamoDB Document Client batchWrite method to review the data format:
+    // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#batchWrite-property
     putItems.push({
       PutRequest: {
         Item: {
@@ -109,7 +103,7 @@ async function writeItems(items, retries) {
         if(unprocessedCount) {
           console.log(`${unprocessedCount} unprocessed items remain, retrying.`);
           let delay = Math.min(Math.pow(2, retries) * 100, context.getRemainingTimeInMillis() - 200);
-          setTimeout(() => writeItems(data.UnprocessedItems, retries + 1), delay);
+          setTimeout(async () => await writeItems(data.UnprocessedItems, retries + 1), delay);
         } else {
           accept(data);
         }
