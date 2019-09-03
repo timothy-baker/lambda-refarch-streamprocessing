@@ -16,21 +16,22 @@ console.log('Loading function');
 const AWS = require('aws-sdk');
 const doc = new AWS.DynamoDB.DocumentClient();
 const ddbTableName = process.env.DDB_TABLE;
+const ddbTtlDays = process.env.DDB_TTL_DAYS;
 
 // Set a TTL for DynamoDB records:
 // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/howitworks-ttl.html
 const today = new Date();
-const expireIn = 2; // days
+const expireIn = ddbTtlDays;
 let expireDate = new Date();
 expireDate.setDate(today.getDate() + expireIn);
 const expireTimeEpoch = Math.floor(expireDate / 1000);
 
-// Enable of disable the debug logs
+// Enable or disable the debug logs
 const DEBUG = true;
 const logger = console.log;
 console.log = function() {
   if (DEBUG) logger.apply(this, arguments);
-}
+};
 
 /**
  * AWS Lambda function acting as Event Processor for AWS Lambda Stream Processing
