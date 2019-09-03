@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: "Creates a Lambda function which reads from the Kinesis Stream in batches of 25 items and persists the stream records into DynamoDB."
+
+Parameters:
+  Prefix:
+    Type: String
+  EventDataTableName:
+    Type: String
+  EventDataTableArn:
+    Type: String
+  EventStreamArn:
+    Type: String
+
+Resources:
+
+  EventStreamConsumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Stream Processing DDB Event Processor
+      FunctionName: !Sub ${Prefix}-EventStreamConsumer
+      Role: !GetAtt EventStreamConsumerExecutionRole.Arn
+      MemorySize: 128
+      Timeout: 20
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref EventDataTableName
+          DDB_TTL_DAYS: 1
+      Runtime: nodejs10.x
+      CodeUri: src/lambda/consumer
+        # Bucket: !Ref LambdaS3Bucket
+        # Key: !Ref LambdaEventStreamConsumerS3Key
+      Handler: ddb_eventprocessor.handler
+      # Handler: !Ref LambdaEventStreamConsumerHandler
+      Events:
+        Stream:
+          Type: Kinesis
+          Properties:
+            Stream: !Ref EventStreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 25
+
+  EventStreamConsumerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${Prefix}-EventStreamConsumerExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${Prefix}-EventStreamConsumerExecutionPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchWriteItem
+                Resource: !Ref EventDataTableArn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaKinesisExecutionRole

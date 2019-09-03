@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: "Creates a DyanmoDB table where the streaming data will be persisted. The table will use On-Demand pricing and have TTL enabled. The TTL variable will prevent unexpected storage costs by removing stale items after 1 day (per EventStreamConsumer Lambda configuraiton)."
+
+Parameters:
+  Prefix:
+    Type: String
+
+Resources:
+
+  EventDataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${Prefix}-EventData
+      AttributeDefinitions:
+        - AttributeName: Username
+          AttributeType: S
+        - AttributeName: Id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: Username
+          KeyType: HASH
+        - AttributeName: Id
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: ExpirationTime
+        Enabled: true
+
+Outputs:
+  TableName:
+    Value: !Ref EventDataTable
+    Description: The DynamoDB table name.
+  TableArn:
+    Value: !GetAtt EventDataTable.Arn
+    Description: The DynamoDB table ARN.

@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: "Template to create a Lambda in Python which is scheduled to poll the Twitter API and put events into the Amazon Kinesis Stream"
+
+Parameters:
+  Prefix:
+    Type: String
+  EventStreamName:
+    Type: String
+  EventStreamArn:
+    Type: String
+
+Resources:
+
+  EventStreamProducerPython:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Scrape twitter and put events into Kinesis
+      FunctionName: !Sub ${Prefix}-EventStreamProducerPython
+      MemorySize: 512
+      Role: !GetAtt EventStreamProducerPythonExecutionRole.Arn
+      Environment:
+        Variables:
+          LOG_LEVEL: INFO
+          KINESIS_STREAM_NAME: !Ref EventStreamName
+      Timeout: 600
+      Runtime: python3.7
+      CodeUri: src/lambda/producer
+      Handler: main.lambda_handler
+      Events:
+        # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+        TriggerProducerLambda:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+            Name: trigger-kinesis-event-producer
+            Description: trigger kinesis event producer every 5 minutes 
+            Enabled: True
+
+  EventStreamProducerPythonExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${Prefix}-EventStreamProducerPythonExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: !Sub ${Prefix}-EventStreamProducerPythonExecutionPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:PutRecord
+                Resource: !Ref EventStreamArn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
