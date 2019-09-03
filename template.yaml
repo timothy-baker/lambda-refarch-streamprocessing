@@ -39,7 +39,8 @@ Resources:
         Prefix: !Ref AWS::StackName
         EventStreamName: !GetAtt EventStreamStack.Outputs.StreamName
         EventStreamArn: !GetAtt EventStreamStack.Outputs.StreamArn
-      TemplateURL: ./template-producer-python.yaml
+      # TemplateURL: ./template-producer-python.yaml
+      TemplateURL: ./.aws-sam/build/template.yaml
 
   #########################################################################################################
   # Event Data Table Stack
