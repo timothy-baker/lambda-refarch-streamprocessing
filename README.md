@@ -24,16 +24,7 @@ does the following:
 
 ## Instructions
 
-Step 1 -  Create an AWS CloudFormation stack with [the
-template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml). The AWS CloudFormation template completely automates the building, deployment, and configuration of all the components of the application.
-
-[![Launch Real-time Stream Processing into North Virginia with CloudFormation](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/images/cloudformation-launch-stack-button.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=lambda-refarch-streamprocessing&templateURL=https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
-
-Step 2 - Once the AWS CloudFormation stack has successfully been created you can do select the Outputs tab and see the AWS parameters needed in the demo Twitter client in the steps below.
-
-Step 3 - To run the example application you need to update the code with AWS and Twitter information. Open producer/twitter2kinesis.py in a text editor.
-
-Step 4 - To access the Twitter API you need to get [access tokens](https://dev.twitter.com/oauth/overview/application-owner-access-tokens). Make sure you have these available. As a best practice we are not hard coding these credentials in our Lambda functions. Instead, we are using AWS SSM Parameter Store to store them, and get them from within the Lambda code. The Lambda code expects the parameters named as below:
+Step 1 - To access the Twitter API you need to get [access tokens](https://dev.twitter.com/oauth/overview/application-owner-access-tokens). Make sure you have these available. As a best practice, we are NOT hard coding these credentials in our Lambda functions. Instead, we are using AWS SSM Parameter Store to store them, and get them from within the Lambda code. The Lambda code expects the parameters named as below:
 
 ```
 /twitter/consumer_key
@@ -42,7 +33,7 @@ Step 4 - To access the Twitter API you need to get [access tokens](https://dev.t
 /twitter/access_token_secret
 ```
 
-You can add these parameters manually by going to AWS Systems Manager > Parameter Store on the AWS Web Management Console, or using the it's easier to add them using below commands on the AWS CLI, make sure the credentials you are using in your CLI are allowed to perform the ```put-parameter``` and API call.
+You can add these parameters manually by going to AWS Systems Manager > Parameter Store on the AWS Web Management Console, or by running the below commands on the AWS CLI. Note: make sure the credentials you are using in your CLI are allowed to perform the `ssm put-parameter` API call. For more information on setting up your IAM user permissions for Systems Manager Parameters, see here: [Control Access to Systems manager Parameters](https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-paramstore-access.html)
 
 ```
 aws ssm put-parameter --name "/twitter/consumer_key" --value "xxx" --type "SecureString"
@@ -51,41 +42,7 @@ aws ssm put-parameter --name "/twitter/access_token_key" --value "zzz" --type "S
 aws ssm put-parameter --name "/twitter/access_token_secret" --value "jjj" --type "SecureString"
 ```
 
-Step 5 - Enter the values for the AWS credentials and Amazon Kinesis stream name. This is the information from the Outputs tab of the CloudFormation template you got in step 2:
-
-AWS parameters - from the Outputs tab of the CloudFormation template
-```
-access_key = ""
-secret_access_key = ""
-region = ""
-stream_name = ""
-```
-
-Step 6 - Finally, before running the example code, you need [Python](https://www.python.org/) installed together with the Python modules boto3 and TwitterAPI. If you don't have the modules already, install them using [pip](http://pip.readthedocs.org/en/stable/installing/):
-
-```
-pip install -r requirements.txt
-```
-
-## Test
-
-![Client and Stream Processor Diagram](images/streamprocessing-diagram.png)
-
-Step 1 - Run the producer/twitter2kinesis.py Python application from the command line to start sending tweets into the Kinesis stream.
-
-```
-python twitter2kinesis.py
-```
-
-Step 2 - In the Amazon DynamoDB management console, select the table named &lt;stackname&gt;-EventData and explore the records.
-
-## Cleanup
-
-To remove all created resources, delete the AWS CloudFormation stack.
-
-
-
-## Update SAM 
+Step 2 - Upgrade (or install) the AWS SAM CLI
 
 ```bash 
 pip install --upgrade pip --user
@@ -93,10 +50,29 @@ hash -r
 pip install --upgrade aws-sam-cli --user
 ```
 
-## Kinesis Producer as Lambda
+Step 3a - Build and Deploy the Application Stack using SAM CLI
 
 ```bash
-sam build -t producer-template.yaml
-sam package --s3-bucket <your-bucket-name> --output-template-file producer-template-packaged.yaml
-sam deploy --template-file producer-template-packaged.yaml --stack-name <stack-name> --capabilities CAPABILITY_IAM
+sam build -t template-producer-python.yaml
+sam package --template-file template.yaml --s3-bucket <your-bucket-name> --output-template-file packaged.yaml --region us-east-1
+sam deploy --template-file ./packaged.yaml --stack-name <stack-name> --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
+rm packaged.yaml
+rm -rf .aws-sam/
 ```
+
+Step 3b -  Create an AWS CloudFormation stack with [the
+template](https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml). The AWS CloudFormation template completely automates the building, deployment, and configuration of all the components of the application.
+
+[![Launch Real-time Stream Processing into North Virginia with CloudFormation](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/images/cloudformation-launch-stack-button.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=lambda-refarch-streamprocessing&templateURL=https://s3.amazonaws.com/awslambda-reference-architectures/stream-processing/template.yaml)
+
+## Validation
+
+![Client and Stream Processor Diagram](images/streamprocessing-diagram.png)
+
+Step 1 - 
+
+Step 2 - In the Amazon DynamoDB management console, select the table named `&lt;stackname&gt;-EventData` and explore the records.
+
+## Cleanup
+
+To remove all created resources, delete the AWS CloudFormation stack.
