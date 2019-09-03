@@ -25,7 +25,7 @@ Resources:
           KINESIS_STREAM_NAME: !Ref EventStreamName
       Timeout: 600
       Runtime: python3.7
-      CodeUri: src/lambda/producer
+      CodeUri: src/lambda/producer-python
       Handler: main.lambda_handler
       Events:
         # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
