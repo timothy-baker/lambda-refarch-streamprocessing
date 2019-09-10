@@ -19,66 +19,166 @@ Description: "Template to set up Kinesis stream, Lambda functions, S3 bucket, Dy
 Resources:
 
   #########################################################################################################
-  # Event Stream Stack
+  # Event Stream
   #   - Creates the Amazon Kinesis Stream resources
   #########################################################################################################
-  EventStreamStack:
-    Type: AWS::CloudFormation::Stack
+  EventStream:
+    Type: AWS::Kinesis::Stream
     Properties:
-      TemplateURL: ./template-stream.yaml
+      ShardCount: 1
   
   #########################################################################################################
-  # Event Stream Producer Stack
-  #   - Creates a Lambda function which polls Twitter for new tweets and adds them to
+  # Event Stream Producer - Python
+  #   - Creates a Lambda function in Phython which polls Twitter for new tweets and adds them to
   #     the Amazon Kinesis stream.
   #########################################################################################################
-  EventStreamProducerStack:
-    Type: AWS::CloudFormation::Stack
+  EventStreamProducerPython:
+    Type: AWS::Serverless::Function
     Properties:
-      Parameters:
-        Prefix: !Ref AWS::StackName
-        EventStreamName: !GetAtt EventStreamStack.Outputs.StreamName
-        EventStreamArn: !GetAtt EventStreamStack.Outputs.StreamArn
-      # TemplateURL: ./template-producer-python.yaml
-      TemplateURL: ./.aws-sam/build/template.yaml
+      Description: Scrape twitter and put events into Kinesis
+      FunctionName: !Sub ${AWS::StackName}-EventStreamProducerPython
+      MemorySize: 512
+      Role: !GetAtt EventStreamProducerPythonExecutionRole.Arn
+      Environment:
+        Variables:
+          LOG_LEVEL: INFO
+          KINESIS_STREAM_NAME: !Ref EventStream
+      Timeout: 600
+      Runtime: python3.7
+      CodeUri: src/lambda/producer-python
+      Handler: main.lambda_handler
+      Events:
+        # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+        TriggerProducerLambda:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+            Name: trigger-kinesis-event-producer
+            Description: trigger kinesis event producer every 5 minutes 
+            Enabled: True
+
+  EventStreamProducerPythonExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-EventStreamProducerPythonExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-EventStreamProducerPythonExecutionPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:PutRecord
+                Resource: !GetAtt EventStream.Arn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
 
   #########################################################################################################
-  # Event Data Table Stack
+  # Event Data Table
   #   - Creates a DyanmoDB table where the streaming data will be persisted.
   #   - The table will use On-Demand pricing and have TTL enabled.
   #   - The TTL variable will prevent unexpected storage costs by removing stale items after 1 day
   #     (per EventStreamConsumer Lambda configuraiton)
   #########################################################################################################
-  EventDataTableStack:
-    Type: AWS::CloudFormation::Stack
+  EventDataTable:
+    Type: AWS::DynamoDB::Table
     Properties:
-      Parameters:
-        Prefix: !Ref AWS::StackName
-      TemplateURL: ./template-datastore.yaml
+      TableName: !Sub ${AWS::StackName}-EventData
+      AttributeDefinitions:
+        - AttributeName: Username
+          AttributeType: S
+        - AttributeName: Id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: Username
+          KeyType: HASH
+        - AttributeName: Id
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: ExpirationTime
+        Enabled: true
 
   #########################################################################################################
-  # Event Stream Consumer Stack
-  #   - Creates a Lambda function which reads from the Kinesis Stream in batches of 25 items and persists
-  #     the stream records into DynamoDB.
+  # Event Stream Consumer
+  #   - Creates a Lambda function in Node.js which reads from the Kinesis Stream in batches of 25 items
+  #     and persists the stream records into a DynamoDB table.
   #########################################################################################################
-  EventStreamConsumerStack:
-    Type: AWS::CloudFormation::Stack
+  EventStreamConsumer:
+    Type: AWS::Serverless::Function
     Properties:
-      Parameters:
-        Prefix: !Ref AWS::StackName
-        EventDataTableName: !GetAtt EventDataTableStack.Outputs.TableName
-        EventDataTableArn: !GetAtt EventDataTableStack.Outputs.TableArn
-        EventStreamArn: !GetAtt EventStreamStack.Outputs.StreamArn
-      TemplateURL: ./template-consumer.yaml
+      Description: Stream Processing DDB Event Processor
+      FunctionName: !Sub ${AWS::StackName}-EventStreamConsumer
+      Role: !GetAtt EventStreamConsumerExecutionRole.Arn
+      MemorySize: 128
+      Timeout: 20
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref EventDataTable
+          DDB_TTL_DAYS: 1
+      Runtime: nodejs10.x
+      CodeUri: src/lambda/consumer
+        # Bucket: !Ref LambdaS3Bucket
+        # Key: !Ref LambdaEventStreamConsumerS3Key
+      Handler: ddb_eventprocessor.handler
+      # Handler: !Ref LambdaEventStreamConsumerHandler
+      Events:
+        Stream:
+          Type: Kinesis
+          Properties:
+            Stream: !GetAtt EventStream.Arn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 25
 
+  EventStreamConsumerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-EventStreamConsumerExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-EventStreamConsumerExecutionPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchWriteItem
+                Resource: !GetAtt EventDataTable.Arn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaKinesisExecutionRole
+
+#########################################################################################################
+# Stack Outputs
+#########################################################################################################
 Outputs:
   Region:
     Value: !Ref AWS::Region
   EventStreamName:
-    Value: !GetAtt EventStreamStack.Outputs.StreamName
+    Value: !Ref EventStream
+    Description: The Amazon Kinesis stream name.
   EventStreamArn:
-    Value: !GetAtt EventStreamStack.Outputs.StreamArn
+    Value: !GetAtt EventStream.Arn
+    Description: The Amazon Kinesis stream ARN.
   EventDataTableName:
-    Value: !GetAtt EventDataTableStack.Outputs.TableName
+    Value: !Ref EventDataTable
   EventDataTableArn:
-    Value: !GetAtt EventDataTableStack.Outputs.TableArn
+    Value: !GetAtt EventDataTable.Arn

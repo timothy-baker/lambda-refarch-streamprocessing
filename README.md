@@ -53,8 +53,7 @@ pip install --upgrade aws-sam-cli --user
 Step 3a - Build and Deploy the Application Stack using SAM CLI
 
 ```bash
-sam build -t template-producer-python.yaml
-sam package --template-file template.yaml --s3-bucket <your-bucket-name> --output-template-file packaged.yaml --region us-east-1
+sam build && sam package --s3-bucket <your-bucket-name> --output-template-file packaged.yaml --region us-east-1
 sam deploy --template-file ./packaged.yaml --stack-name <stack-name> --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
 ```
 

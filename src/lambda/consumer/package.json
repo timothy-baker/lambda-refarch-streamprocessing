@@ -1,0 +1,7 @@
+{
+  "name": "ddb_eventprocessor",
+  "version": "0.0.1",
+  "dependencies": {
+    "aws-sdk": ">= 2.525.0"
+  }
+}
