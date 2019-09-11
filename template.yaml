@@ -51,7 +51,7 @@ Resources:
           LOG_LEVEL: INFO
           KINESIS_STREAM_NAME: !Ref EventStream
           WOEID: !Ref WhereOnEarthID
-      Timeout: 600
+      Timeout: 900
       Runtime: python3.7
       CodeUri: src/lambda/producer-python
       Handler: main.lambda_handler
@@ -60,7 +60,7 @@ Resources:
         TriggerProducerLambda:
           Type: Schedule
           Properties:
-            Schedule: rate(5 minutes)
+            Schedule: rate(30 minutes)
             Name: trigger-kinesis-event-producer
             Description: trigger kinesis event producer every 5 minutes 
             Enabled: True
