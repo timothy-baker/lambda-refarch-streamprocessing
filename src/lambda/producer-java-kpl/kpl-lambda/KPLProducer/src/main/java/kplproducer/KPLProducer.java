@@ -37,13 +37,8 @@ public class KPLProducer implements RequestHandler<Object, String> {
         Map<String, String> kinesis_config = getEnvVars(config_parameters);
         String STREAM_NAME = kinesis_config.get("STREAM_NAME");
         String REGION = kinesis_config.get("REGION");
-        List<List<Status>> tweetLists = TweetFetcher.getTweets("#wwg1wga");
-        // Check out the tweets by uncommenting below
-        // for(List<Status> tweetList : tweets) {
-        //   for(Status tweet : tweetList) {
-        //     System.out.println("@" + tweet.getUser().getScreenName());
-        //   }
-        // }
+        List<List<Status>> tweetLists = TweetFetcher.getTweets();
+
         final KinesisProducer producer = getKinesisProducer(REGION);
 
         // Iterate over the tweets and use addUserRecord
@@ -74,7 +69,6 @@ public class KPLProducer implements RequestHandler<Object, String> {
         } catch(Exception e) {
             System.out.println("Could not fetch future.");
         }
-
         return "Processed Stream";
     }
 

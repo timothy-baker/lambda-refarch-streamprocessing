@@ -1,5 +1,7 @@
 package kplproducer;
 
+import twitter4j.Trend;
+import twitter4j.Trends;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
@@ -8,6 +10,8 @@ import twitter4j.auth.AccessToken;
 import twitter4j.Query;
 import twitter4j.QueryResult;
 import twitter4j.Query.ResultType;
+import twitter4j.ResponseList;
+import twitter4j.Location;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,7 +33,7 @@ public class TweetFetcher {
   static final String TWITTER_ACCESS_KEY = "/twitter/access_token_key";
   static final String TWITTER_ACCESS_SECRET = "/twitter/access_token_secret";
 
-  public static List<List<Status>> getTweets(String query) {
+  public static List<List<Status>> getTweets() {
     // set up the parameters we want to fetch
     ArrayList<String> parameterSet = new ArrayList<String>();
     parameterSet.add(TWITTER_CONSUMER_KEY);
@@ -41,12 +45,12 @@ public class TweetFetcher {
     Map<String, String> twitterCreds = getParameterFromSSMByName(parameterSet);
 
     // pass the parameters to the queryTweets method
-    List<List<Status>> tweets = queryTweets(query, twitterCreds);
+    List<List<Status>> tweets = queryTweets(twitterCreds);
 
     return tweets;
   }
 
-  public static List<List<Status>> queryTweets(String queryString, Map<String, String> twitterCreds) {
+  public static List<List<Status>> queryTweets(Map<String, String> twitterCreds) {
     // instantiate a factory
     TwitterFactory factory = new TwitterFactory();
     Twitter twitter = factory.getInstance();
@@ -60,29 +64,22 @@ public class TweetFetcher {
     List<List<Status>> tweets = new ArrayList<List<Status>>(100);
 
     try {
+      List<String> trends = getTrends(twitter, "canada");
+      for (String trend : trends) {
       // create the query and set the count per page and result_type
-      Query query = new Query(queryString);
-      query.setResultType(ResultType.recent);
-      query.setCount(PER_PAGE);
-      QueryResult result;
+        System.out.println("Fetching tweets for trend: " + trend);
+        Query query = new Query(trend);
+        query.setResultType(ResultType.recent);
+        query.setCount(PER_PAGE);
+        QueryResult result;
 
-      // Iterate for a pre-defined number of iterations.
-      // This allows us to let the producer send records
-      // in a secondary step where we aren't waiting for
-      // the tweet API to respond between puts
-      for(int i = 0; i < ITERATIONS+1; ++i) {
         result = twitter.search(query);
         tweets.add(result.getTweets());
-        // if there are no more results just break out of the loop
-        if (result.hasNext()) {
-          query = result.nextQuery();
-        } else {
-          System.out.println("Max query reached");
-          break;
-        }
       }
     } catch (TwitterException te) {
       te.printStackTrace();
+      System.out.println("Problem fetching tweets");
+      System.exit(1);
     }
     return tweets;
   }
@@ -105,5 +102,29 @@ public class TweetFetcher {
       config.put(parameter.getName(), parameter.getValue());
     });
     return config;
+    }
+
+  public static List<String> getTrends(Twitter twitter, String locationName) {
+    int idTrendLocation = 0;
+    List<String> trend_list = new ArrayList<String>();
+    try {
+      ResponseList<Location> locations = twitter.getAvailableTrends();
+      for (Location location : locations) {
+        if (location.getName().toLowerCase().equals(locationName.toLowerCase())) {
+          idTrendLocation = location.getWoeid();
+          break;
+          }
+        }
+      Trend[] trends = twitter.getPlaceTrends(idTrendLocation).getTrends();
+      for (Trend trend : trends) {
+        trend_list.add(trend.getName());
+      }
+      return trend_list;
+    } catch (TwitterException te) {
+      te.printStackTrace();
+      System.out.println("Failed to get trends for: " + locationName);
+      System.exit(1);
+      }
+    return null;
     }
   }
