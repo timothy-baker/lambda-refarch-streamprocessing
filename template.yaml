@@ -15,6 +15,13 @@ Description: "Template to set up Kinesis stream, Lambda functions, S3 bucket, Dy
 #     Type : String
 #     Default : ddb_eventprocessor.handler
 #     Description : Name of handler for Stream Processing DynamoDB Event Processor Lambda function.
+Parameters: 
+  # https://developer.twitter.com/en/docs/trends/trends-for-location/api-reference/get-trends-place
+  # Yahoo! Where on Earth ID (WOEID)
+  WhereOnEarthID:
+    Description: Yahoo! Where on Earth ID (1=Global)
+    Type: String
+    Default: 1
 
 Resources:
 
@@ -43,6 +50,7 @@ Resources:
         Variables:
           LOG_LEVEL: INFO
           KINESIS_STREAM_NAME: !Ref EventStream
+          WOEID: !Ref WhereOnEarthID
       Timeout: 600
       Runtime: python3.7
       CodeUri: src/lambda/producer-python
@@ -157,14 +165,11 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - logs:*
-                Resource: arn:aws:logs:*:*:*
-              - Effect: Allow
-                Action:
                   - dynamodb:BatchWriteItem
                 Resource: !GetAtt EventDataTable.Arn
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaKinesisExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
 #########################################################################################################
 # Stack Outputs
