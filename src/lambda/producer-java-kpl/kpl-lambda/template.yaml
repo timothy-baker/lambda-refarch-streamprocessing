@@ -18,6 +18,10 @@ Resources:
       Handler: kplproducer.KPLProducer::handleRequest
       Runtime: java8
       MemorySize: 512
+      Environment:
+        Variables:
+          STREAM_NAME: "sample-kpl-stream"
+          REGION: "us-east-1"
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function

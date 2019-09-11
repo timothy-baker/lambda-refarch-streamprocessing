@@ -1,6 +1,8 @@
 package kplproducer;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.Future;
 
@@ -18,11 +20,7 @@ import com.amazonaws.services.kinesis.producer.UserRecordResult;
 
 
 public class KPLProducer implements RequestHandler<Object, String> {
-    // kinesis stream name
-    public static final String STREAM_NAME = "sample-kpl-stream";
-
-    // kinesis stream region
-    public static final String REGION = "us-east-1";
+    public static final String[] config_parameters = {"STREAM_NAME", "REGION"};
 
     // RecordMaxBufferedTime controls how long records are allowed to wait
     // in the KPL's buffers before being sent. Larger values increase
@@ -36,6 +34,9 @@ public class KPLProducer implements RequestHandler<Object, String> {
     private static final String TIMESTAMP = Long.toString(System.currentTimeMillis());
 
     public String handleRequest(final Object input, final Context context) {
+        Map<String, String> kinesis_config = getEnvVars(config_parameters);
+        String STREAM_NAME = kinesis_config.get("STREAM_NAME");
+        String REGION = kinesis_config.get("REGION");
         List<List<Status>> tweetLists = TweetFetcher.getTweets("#wwg1wga");
         // Check out the tweets by uncommenting below
         // for(List<Status> tweetList : tweets) {
@@ -43,7 +44,7 @@ public class KPLProducer implements RequestHandler<Object, String> {
         //     System.out.println("@" + tweet.getUser().getScreenName());
         //   }
         // }
-        final KinesisProducer producer = getKinesisProducer();
+        final KinesisProducer producer = getKinesisProducer(REGION);
 
         // Iterate over the tweets and use addUserRecord
         // This method asynchronously aggregates and collects records
@@ -77,10 +78,10 @@ public class KPLProducer implements RequestHandler<Object, String> {
         return "Processed Stream";
     }
 
-    public static KinesisProducer getKinesisProducer() {
+    public static KinesisProducer getKinesisProducer(String region) {
         // Create a producer and set some config parameters
         KinesisProducerConfiguration config = new KinesisProducerConfiguration();
-        config.setRegion(REGION);
+        config.setRegion(region);
         config.setRecordMaxBufferedTime(MAX_BUFFER_TIME);
         KinesisProducer producer = new KinesisProducer(config);
         return producer;
@@ -98,6 +99,20 @@ public class KPLProducer implements RequestHandler<Object, String> {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public Map<String, String> getEnvVars (String[] args) {
+        Map<String, String> kinesis_config = new HashMap<>();
+        for (String env: args) {
+            String value = System.getenv(env);
+            if (value != null) {
+                kinesis_config.put(env, value);
+            } else {
+                System.out.println("Missing ENV VAR: " + env);
+                System.exit(1);
+            }
+        }
+        return kinesis_config;
     }
 
 }
