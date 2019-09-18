@@ -34,6 +34,7 @@ public class KPLProducer implements RequestHandler<Object, String> {
     private static final String TIMESTAMP = Long.toString(System.currentTimeMillis());
 
     public String handleRequest(final Object input, final Context context) {
+        int recordsProduced = 0;
         Map<String, String> kinesis_config = getEnvVars(config_parameters);
         String STREAM_NAME = kinesis_config.get("STREAM_NAME");
         String REGION = kinesis_config.get("REGION");
@@ -55,6 +56,7 @@ public class KPLProducer implements RequestHandler<Object, String> {
                     // doesn't block
                     producer.addUserRecord(STREAM_NAME, TIMESTAMP, data)
                 );
+                recordsProduced++;
             }
         }
 
@@ -68,12 +70,15 @@ public class KPLProducer implements RequestHandler<Object, String> {
                     assert true;
                 } else {
                     System.out.println("Record failed to deliver.");
+                    recordsProduced--;
                 }
             }
         } catch(Exception e) {
             System.out.println("Could not fetch future.");
         }
-        return "Processed Stream";
+        String records = Integer.toString(recordsProduced);
+        System.out.println("Produced " + records + " records.");
+        return "Processed Stream.";
     }
 
     public static KinesisProducer getKinesisProducer(String region) {
