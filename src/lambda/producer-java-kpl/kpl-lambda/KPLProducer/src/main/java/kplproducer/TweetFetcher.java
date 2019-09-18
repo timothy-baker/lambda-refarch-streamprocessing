@@ -60,11 +60,12 @@ public class TweetFetcher {
     twitter.setOAuthConsumer(twitterCreds.get(TWITTER_CONSUMER_KEY), twitterCreds.get(TWITTER_CONSUMER_SECRET));
     twitter.setOAuthAccessToken(accessToken);
 
-    // create a List of Lists to hold paginated results
+    // create a List of Lists to hold tweet results
     List<List<Status>> tweets = new ArrayList<List<Status>>(100);
 
     try {
       List<String> trends = getTrends(twitter, woeid);
+      // iterate over the trends and use them as search queries
       for (String trend : trends) {
       // create the query and set the count per page and result_type
         System.out.println("Fetching tweets for trend: " + trend);
@@ -95,8 +96,7 @@ public class TweetFetcher {
     // fetch the parameters based on the request
     GetParametersResult parameterResult = ssm.getParameters(parameterRequest);
 
-    // map the parameters by name to a hashmap
-    // so we can grab them by key
+    // map the parameters by name to a hashmap so we can grab them by key
     Map<String, String> config = new HashMap<>();
     parameterResult.getParameters().forEach(parameter -> {
       config.put(parameter.getName(), parameter.getValue());
@@ -105,6 +105,7 @@ public class TweetFetcher {
     }
 
   public static List<String> getTrends(Twitter twitter, int woeid) {
+    // build a list of trends as strings from a given WOEID
     List<String> trend_list = new ArrayList<String>();
     try {
       Trend[] trends = twitter.getPlaceTrends(woeid).getTrends();

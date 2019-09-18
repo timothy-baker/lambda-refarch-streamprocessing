@@ -38,8 +38,10 @@ public class KPLProducer implements RequestHandler<Object, String> {
         String STREAM_NAME = kinesis_config.get("STREAM_NAME");
         String REGION = kinesis_config.get("REGION");
         int WOEID = Integer.parseInt(kinesis_config.get("WOEID"));
+        // Fetch some tweets to send to our kinesis stream
         List<List<Status>> tweetLists = TweetFetcher.getTweets(WOEID);
 
+        // Create a kinesis producer
         final KinesisProducer producer = getKinesisProducer(REGION);
 
         // Iterate over the tweets and use addUserRecord
@@ -98,6 +100,7 @@ public class KPLProducer implements RequestHandler<Object, String> {
     }
 
     public Map<String, String> getEnvVars (String[] args) {
+        // Get some env vars and map them
         Map<String, String> kinesis_config = new HashMap<>();
         for (String env: args) {
             String value = System.getenv(env);
