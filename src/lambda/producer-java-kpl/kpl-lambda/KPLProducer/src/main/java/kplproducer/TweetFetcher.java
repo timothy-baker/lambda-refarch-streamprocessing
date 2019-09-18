@@ -33,7 +33,7 @@ public class TweetFetcher {
   static final String TWITTER_ACCESS_KEY = "/twitter/access_token_key";
   static final String TWITTER_ACCESS_SECRET = "/twitter/access_token_secret";
 
-  public static List<List<Status>> getTweets() {
+  public static List<List<Status>> getTweets(int woeid) {
     // set up the parameters we want to fetch
     ArrayList<String> parameterSet = new ArrayList<String>();
     parameterSet.add(TWITTER_CONSUMER_KEY);
@@ -45,12 +45,12 @@ public class TweetFetcher {
     Map<String, String> twitterCreds = getParameterFromSSMByName(parameterSet);
 
     // pass the parameters to the queryTweets method
-    List<List<Status>> tweets = queryTweets(twitterCreds);
+    List<List<Status>> tweets = queryTweets(twitterCreds, woeid);
 
     return tweets;
   }
 
-  public static List<List<Status>> queryTweets(Map<String, String> twitterCreds) {
+  public static List<List<Status>> queryTweets(Map<String, String> twitterCreds, int woeid) {
     // instantiate a factory
     TwitterFactory factory = new TwitterFactory();
     Twitter twitter = factory.getInstance();
@@ -64,7 +64,7 @@ public class TweetFetcher {
     List<List<Status>> tweets = new ArrayList<List<Status>>(100);
 
     try {
-      List<String> trends = getTrends(twitter, "canada");
+      List<String> trends = getTrends(twitter, woeid);
       for (String trend : trends) {
       // create the query and set the count per page and result_type
         System.out.println("Fetching tweets for trend: " + trend);
@@ -104,25 +104,17 @@ public class TweetFetcher {
     return config;
     }
 
-  public static List<String> getTrends(Twitter twitter, String locationName) {
-    int idTrendLocation = 0;
+  public static List<String> getTrends(Twitter twitter, int woeid) {
     List<String> trend_list = new ArrayList<String>();
     try {
-      ResponseList<Location> locations = twitter.getAvailableTrends();
-      for (Location location : locations) {
-        if (location.getName().toLowerCase().equals(locationName.toLowerCase())) {
-          idTrendLocation = location.getWoeid();
-          break;
-          }
-        }
-      Trend[] trends = twitter.getPlaceTrends(idTrendLocation).getTrends();
+      Trend[] trends = twitter.getPlaceTrends(woeid).getTrends();
       for (Trend trend : trends) {
         trend_list.add(trend.getName());
       }
       return trend_list;
     } catch (TwitterException te) {
       te.printStackTrace();
-      System.out.println("Failed to get trends for: " + locationName);
+      System.out.println("Failed to get trends for: " + woeid);
       System.exit(1);
       }
     return null;

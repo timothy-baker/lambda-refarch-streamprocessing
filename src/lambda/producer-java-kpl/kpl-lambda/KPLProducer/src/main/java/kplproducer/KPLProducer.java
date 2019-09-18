@@ -20,7 +20,7 @@ import com.amazonaws.services.kinesis.producer.UserRecordResult;
 
 
 public class KPLProducer implements RequestHandler<Object, String> {
-    public static final String[] config_parameters = {"STREAM_NAME", "REGION"};
+    public static final String[] config_parameters = {"STREAM_NAME", "REGION", "WOEID"};
 
     // RecordMaxBufferedTime controls how long records are allowed to wait
     // in the KPL's buffers before being sent. Larger values increase
@@ -37,12 +37,14 @@ public class KPLProducer implements RequestHandler<Object, String> {
         Map<String, String> kinesis_config = getEnvVars(config_parameters);
         String STREAM_NAME = kinesis_config.get("STREAM_NAME");
         String REGION = kinesis_config.get("REGION");
-        List<List<Status>> tweetLists = TweetFetcher.getTweets();
+        int WOEID = Integer.parseInt(kinesis_config.get("WOEID"));
+        List<List<Status>> tweetLists = TweetFetcher.getTweets(WOEID);
 
         final KinesisProducer producer = getKinesisProducer(REGION);
 
         // Iterate over the tweets and use addUserRecord
         // This method asynchronously aggregates and collects records
+        // For every run of this lambda, the TIMESTAMP changes reducing shard heat
         List<Future<UserRecordResult>> putFutures = new LinkedList<Future<UserRecordResult>>();
         for(List<Status> tweetList : tweetLists) {
             for(Status tweet : tweetList) {

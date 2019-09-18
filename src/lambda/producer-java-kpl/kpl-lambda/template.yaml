@@ -22,6 +22,7 @@ Resources:
         Variables:
           STREAM_NAME: "sample-kpl-stream"
           REGION: "us-east-1"
+          WOEID: "1"
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
