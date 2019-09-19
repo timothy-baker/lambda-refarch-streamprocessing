@@ -3,10 +3,12 @@ package kplproducer;
 import twitter4j.Trend;
 import twitter4j.Trends;
 import twitter4j.Twitter;
+import twitter4j.conf.ConfigurationBuilder;
 import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
+import twitter4j.TwitterObjectFactory;
 import twitter4j.Status;
-import twitter4j.auth.AccessToken;
+// import twitter4j.auth.AccessToken;
 import twitter4j.Query;
 import twitter4j.QueryResult;
 import twitter4j.Query.ResultType;
@@ -33,7 +35,7 @@ public class TweetFetcher {
   static final String TWITTER_ACCESS_KEY = "/twitter/access_token_key";
   static final String TWITTER_ACCESS_SECRET = "/twitter/access_token_secret";
 
-  public static List<List<Status>> getTweets(int woeid) {
+  public static List<String> getTweets(int woeid) {
     // set up the parameters we want to fetch
     ArrayList<String> parameterSet = new ArrayList<String>();
     parameterSet.add(TWITTER_CONSUMER_KEY);
@@ -45,23 +47,30 @@ public class TweetFetcher {
     Map<String, String> twitterCreds = getParameterFromSSMByName(parameterSet);
 
     // pass the parameters to the queryTweets method
-    List<List<Status>> tweets = queryTweets(twitterCreds, woeid);
+    List<String> tweets = queryTweets(twitterCreds, woeid);
 
     return tweets;
   }
 
-  public static List<List<Status>> queryTweets(Map<String, String> twitterCreds, int woeid) {
-    // instantiate a factory
-    TwitterFactory factory = new TwitterFactory();
-    Twitter twitter = factory.getInstance();
+  public static List<String> queryTweets(Map<String, String> twitterCreds, int woeid) {
+    // instantiate a cb for the factory
+    ConfigurationBuilder cb = new ConfigurationBuilder();
+    cb.setJSONStoreEnabled(true);
 
     // handle OAuth1 setup
-    AccessToken accessToken = new AccessToken(twitterCreds.get(TWITTER_ACCESS_KEY), twitterCreds.get(TWITTER_ACCESS_SECRET));
-    twitter.setOAuthConsumer(twitterCreds.get(TWITTER_CONSUMER_KEY), twitterCreds.get(TWITTER_CONSUMER_SECRET));
-    twitter.setOAuthAccessToken(accessToken);
+    // AccessToken accessToken = new AccessToken(twitterCreds.get(TWITTER_ACCESS_KEY), twitterCreds.get(TWITTER_ACCESS_SECRET));
+    cb.setOAuthConsumerKey(twitterCreds.get(TWITTER_CONSUMER_KEY));
+    cb.setOAuthConsumerSecret(twitterCreds.get(TWITTER_CONSUMER_SECRET));
+    cb.setOAuthAccessToken(twitterCreds.get(TWITTER_ACCESS_KEY));
+    cb.setOAuthAccessTokenSecret(twitterCreds.get(TWITTER_ACCESS_SECRET));
 
-    // create a List of Lists to hold tweet results
-    List<List<Status>> tweets = new ArrayList<List<Status>>(100);
+    // construct the factory and instance
+    TwitterFactory factory = new TwitterFactory(cb.build());
+    Twitter twitter = factory.getInstance();
+
+    // create a List to hold JSON tweet strings
+    // 50 trends * 100 tweets (at max)
+    List<String> tweets = new ArrayList<String>(5000);
 
     try {
       List<String> trends = getTrends(twitter, woeid);
@@ -75,7 +84,11 @@ public class TweetFetcher {
         QueryResult result;
 
         result = twitter.search(query);
-        tweets.add(result.getTweets());
+        // iterate over the tweets, convert them to JSON strings and store
+        List<Status> results = result.getTweets();
+        for (Status r : results) {
+          tweets.add(TwitterObjectFactory.getRawJSON(r));
+        }
       }
     } catch (TwitterException te) {
       te.printStackTrace();

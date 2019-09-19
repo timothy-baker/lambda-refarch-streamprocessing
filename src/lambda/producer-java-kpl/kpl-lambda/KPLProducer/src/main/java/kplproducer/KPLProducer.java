@@ -10,6 +10,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 import twitter4j.Status;
+import twitter4j.TwitterObjectFactory;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -30,7 +31,6 @@ public class KPLProducer implements RequestHandler<Object, String> {
     // minimize propagation delay, so we'll increase it here to get more
     // aggregation.
     public static final int MAX_BUFFER_TIME = 15000;
-
     private static final String TIMESTAMP = Long.toString(System.currentTimeMillis());
 
     public String handleRequest(final Object input, final Context context) {
@@ -40,24 +40,24 @@ public class KPLProducer implements RequestHandler<Object, String> {
         String REGION = kinesis_config.get("REGION");
         int WOEID = Integer.parseInt(kinesis_config.get("WOEID"));
         // Fetch some tweets to send to our kinesis stream
-        List<List<Status>> tweetLists = TweetFetcher.getTweets(WOEID);
+        List<String> tweetList = TweetFetcher.getTweets(WOEID);
 
         // Create a kinesis producer
         final KinesisProducer producer = getKinesisProducer(REGION);
 
+        // Create an LL for our futures
+        List<Future<UserRecordResult>> putFutures = new LinkedList<Future<UserRecordResult>>();
+
         // Iterate over the tweets and use addUserRecord
         // This method asynchronously aggregates and collects records
         // For every run of this lambda, the TIMESTAMP changes reducing shard heat
-        List<Future<UserRecordResult>> putFutures = new LinkedList<Future<UserRecordResult>>();
-        for(List<Status> tweetList : tweetLists) {
-            for(Status tweet : tweetList) {
-                ByteBuffer data = makeEntry(tweet);
-                putFutures.add(
-                    // doesn't block
-                    producer.addUserRecord(STREAM_NAME, TIMESTAMP, data)
-                );
-                recordsProduced++;
-            }
+        for(String tweet : tweetList) {
+            ByteBuffer data = makeEntry(tweet);
+            putFutures.add(
+                // doesn't block
+                producer.addUserRecord(STREAM_NAME, TIMESTAMP, data)
+            );
+            recordsProduced++;
         }
 
         // we'll wait on the futures/callbacks here
@@ -90,15 +90,10 @@ public class KPLProducer implements RequestHandler<Object, String> {
         return producer;
     }
 
-    public ByteBuffer makeEntry(Status tweet) {
+    public ByteBuffer makeEntry(String tweet) {
         // Create a bytebuffer to send to the kinesis stream
-        // Makes simple strings of the tweetuser/tweet
-        StringBuilder sb = new StringBuilder();
-        sb.append("@" + tweet.getUser().getScreenName());
-        sb.append(" - ");
-        sb.append(tweet.getText());
         try {
-            return ByteBuffer.wrap(sb.toString().getBytes("UTF-8"));
+            return ByteBuffer.wrap(tweet.getBytes("UTF-8"));
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
