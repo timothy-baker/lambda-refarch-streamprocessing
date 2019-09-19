@@ -9,9 +9,6 @@ import java.util.concurrent.Future;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
-import twitter4j.Status;
-import twitter4j.TwitterObjectFactory;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
@@ -75,6 +72,7 @@ public class KPLProducer implements RequestHandler<Object, String> {
             }
         } catch(Exception e) {
             System.out.println("Could not fetch future.");
+            recordsProduced--;
         }
         String records = Integer.toString(recordsProduced);
         System.out.println("Produced " + records + " records.");
