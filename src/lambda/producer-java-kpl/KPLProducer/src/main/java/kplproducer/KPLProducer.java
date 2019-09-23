@@ -18,7 +18,7 @@ import com.amazonaws.services.kinesis.producer.UserRecordResult;
 
 
 public class KPLProducer implements RequestHandler<Object, String> {
-    public static final String[] config_parameters = {"STREAM_NAME", "REGION", "WOEID"};
+    public static final String[] config_parameters = {"KINESIS_STREAM_NAME", "REGION", "WOEID"};
 
     // RecordMaxBufferedTime controls how long records are allowed to wait
     // in the KPL's buffers before being sent. Larger values increase
@@ -33,7 +33,7 @@ public class KPLProducer implements RequestHandler<Object, String> {
     public String handleRequest(final Object input, final Context context) {
         int recordsProduced = 0;
         Map<String, String> kinesis_config = getEnvVars(config_parameters);
-        String STREAM_NAME = kinesis_config.get("STREAM_NAME");
+        String STREAM_NAME = kinesis_config.get("KINESIS_STREAM_NAME");
         String REGION = kinesis_config.get("REGION");
         int WOEID = Integer.parseInt(kinesis_config.get("WOEID"));
         // Fetch some tweets to send to our kinesis stream
@@ -42,38 +42,21 @@ public class KPLProducer implements RequestHandler<Object, String> {
         // Create a kinesis producer
         final KinesisProducer producer = getKinesisProducer(REGION);
 
-        // Create an LL for our futures
-        List<Future<UserRecordResult>> putFutures = new LinkedList<Future<UserRecordResult>>();
-
         // Iterate over the tweets and use addUserRecord
         // This method asynchronously aggregates and collects records
         // For every run of this lambda, the TIMESTAMP changes reducing shard heat
         for(String tweet : tweetList) {
             ByteBuffer data = makeEntry(tweet);
-            putFutures.add(
-                // doesn't block
-                producer.addUserRecord(STREAM_NAME, TIMESTAMP, data)
-            );
+            // doesn't block
+            producer.addUserRecord(STREAM_NAME, TIMESTAMP, data);
             recordsProduced++;
         }
 
-        // we'll wait on the futures/callbacks here
-        try {
-            for(Future<UserRecordResult> f : putFutures) {
-                // blocks until future completes
-                // catch exceptions below
-                UserRecordResult result = f.get();
-                if (result.isSuccessful()) {
-                    assert true;
-                } else {
-                    System.out.println("Record failed to deliver.");
-                    recordsProduced--;
-                }
-            }
-        } catch(Exception e) {
-            System.out.println("Could not fetch future.");
-            recordsProduced--;
-        }
+        System.out.println("Flushing records");
+        // Flush any buffered records yet to be sent
+        producer.flushSync();
+        // Kill the child process and any threads managing it
+        producer.destroy();
         String records = Integer.toString(recordsProduced);
         System.out.println("Produced " + records + " records.");
         return "Processed Stream.";
@@ -82,6 +65,7 @@ public class KPLProducer implements RequestHandler<Object, String> {
     public static KinesisProducer getKinesisProducer(String region) {
         // Create a producer and set some config parameters
         KinesisProducerConfiguration config = new KinesisProducerConfiguration();
+        // Required if not running on EC2
         config.setRegion(region);
         config.setRecordMaxBufferedTime(MAX_BUFFER_TIME);
         KinesisProducer producer = new KinesisProducer(config);

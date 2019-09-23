@@ -17,7 +17,7 @@ Resources:
       MemorySize: 512
       Environment:
         Variables:
-          STREAM_NAME: "sample-kpl-stream"
+          KINESIS_STREAM_NAME: "sample-kpl-stream"
           REGION: "us-east-1"
           WOEID: "1"
 

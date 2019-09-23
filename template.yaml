@@ -89,6 +89,62 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+  
+  #########################################################################################################
+  # Event Stream Producer - Java
+  #   - Creates a Lambda function in Java which polls Twitter for new tweets and adds them to
+  #     the Amazon Kinesis stream.
+  #########################################################################################################
+  EventStreamProducerPython:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Scrape twitter and put events into Kinesis
+      FunctionName: !Sub ${AWS::StackName}-EventStreamProducerJava
+      MemorySize: 512
+      Role: !GetAtt EventStreamProducerJavaExecutionRole.Arn
+      Environment:
+        Variables:
+          LOG_LEVEL: INFO
+          KINESIS_STREAM_NAME: !Ref EventStream
+          WOEID: !Ref WhereOnEarthID
+      Timeout: 60
+      Runtime: Java8
+      CodeUri: src/lambda/producer-java-kpl/KPLProducer/target/KPLProducer-1.0.jar
+      Handler: kplproducer.KPLProducer::handleRequest
+      Events:
+        # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+        TriggerProducerLambda:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+            Name: trigger-kinesis-event-producer-java
+            Description: trigger kinesis event producer every 5 minutes 
+            Enabled: True
+
+  EventStreamProducerPythonExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-EventStreamProducerJavaExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-EventStreamProducerJavaExecutionPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:PutRecord
+                Resource: !GetAtt EventStream.Arn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
 
   #########################################################################################################
   # Event Data Table
