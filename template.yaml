@@ -66,7 +66,7 @@ Resources:
           Properties:
             Schedule: rate(30 minutes)
             Name: trigger-kinesis-event-producer
-            Description: trigger kinesis event producer every 5 minutes 
+            Description: trigger kinesis event producer every 30 minutes
             Enabled: True
 
   EventStreamProducerPythonExecutionRole:
@@ -112,7 +112,7 @@ Resources:
           KINESIS_STREAM_NAME: !Ref EventStream
           WOEID: !Ref WhereOnEarthID
           REGION: !Ref Region
-      Timeout: 60
+      Timeout: 90
       Runtime: java8
       # If this does not exist, run `mvn package` in the KPLProducer directory
       CodeUri: src/lambda/producer-java-kpl/KPLProducer
@@ -122,9 +122,9 @@ Resources:
         TriggerProducerLambda:
           Type: Schedule
           Properties:
-            Schedule: rate(5 minutes)
+            Schedule: rate(10 minutes)
             Name: trigger-kinesis-event-producer-java
-            Description: trigger kinesis event producer every 5 minutes 
+            Description: trigger kinesis event producer every 10 minutes
             Enabled: True
 
   EventStreamProducerJavaExecutionRole:
@@ -147,6 +147,8 @@ Resources:
               - Effect: Allow
                 Action:
                   - kinesis:PutRecord
+                  - kinesis:DescribeStream
+                  - kinesis:PutRecords
                 Resource: !GetAtt EventStream.Arn
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -199,7 +201,12 @@ Resources:
     DependsOn:
     - FirehoseDeliveryPolicy
     - FirehoseS3Bucket
+    - FirehoseS3Role
     Properties:
+      DeliveryStreamType: KinesisStreamAsSource
+      KinesisStreamSourceConfiguration:
+        KinesisStreamARN: !GetAtt EventStream.Arn
+        RoleARN: !GetAtt FirehoseS3Role.Arn
       ExtendedS3DestinationConfiguration:
         BucketARN: !GetAtt FirehoseS3Bucket.Arn
         BufferingHints:
@@ -235,8 +242,10 @@ Resources:
   
   FirehoseDeliveryPolicy:
     Type: AWS::IAM::Policy
+    DependsOn:
+    - EventStream
     Properties:
-      PolicyName: S3UsagePolicy
+      PolicyName: FirehosePolicy
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -259,6 +268,34 @@ Resources:
                 - - 'arn:aws:s3:::'
                   - !Ref FirehoseS3Bucket
                   - '*'
+        -
+          Effect: Allow
+          Action:
+            - lambda:InvokeFunction
+            - lambda:GetFunctionConfiguration
+          Resource: !GetAtt FirehoseTransformLambda.Arn
+        -
+          Effect: Allow
+          Action:
+            - kinesis:DescribeStream
+            - kinesis:GetShardIterator
+            - kinesis:GetRecords
+          Resource:
+            - !GetAtt EventStream.Arn
+        -
+          Effect: Allow
+          Action:
+            - logs:PutLogEvents
+          Resource:
+            - !Join
+              - ''
+              - - 'arn:aws:logs:'
+                - !Ref Region
+                - ':'
+                - !Ref 'AWS::AccountId'
+                - ':log-group:/aws/kinesisfirehose/'
+                - !Ref EventStream
+                - ':log-stream:*'
       Roles:
       - !Ref FirehoseS3Role
 
@@ -359,3 +396,6 @@ Outputs:
     Value: !Ref EventDataTable
   EventDataTableArn:
     Value: !GetAtt EventDataTable.Arn
+  FirehoseS3BucketArn:
+    Value: !GetAtt FirehoseS3Bucket.Arn
+    Description: The Firehose S3 Bucket ARN.
