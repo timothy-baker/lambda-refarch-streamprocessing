@@ -1,9 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  kpl-lambda
-
-  Sample SAM Template for kpl-lambda
+Description: "Sample SAM Template for kpl-lambda"
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
@@ -18,6 +15,11 @@ Resources:
       Handler: kplproducer.KPLProducer::handleRequest
       Runtime: java8
       MemorySize: 512
+      Environment:
+        Variables:
+          KINESIS_STREAM_NAME: "sample-kpl-stream"
+          REGION: "us-east-1"
+          WOEID: "1"
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function

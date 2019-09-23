@@ -22,6 +22,10 @@ Parameters:
     Description: Yahoo! Where on Earth ID (1=Global)
     Type: String
     Default: 1
+  Region:
+    Description: Region to configure the KPL producer
+    Type: String
+    Default: us-east-1
 
 Resources:
 
@@ -62,7 +66,7 @@ Resources:
           Properties:
             Schedule: rate(30 minutes)
             Name: trigger-kinesis-event-producer
-            Description: trigger kinesis event producer every 5 minutes 
+            Description: trigger kinesis event producer every 30 minutes
             Enabled: True
 
   EventStreamProducerPythonExecutionRole:
@@ -89,6 +93,211 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+  
+  #########################################################################################################
+  # Event Stream Producer - Java
+  #   - Creates a Lambda function in Java which polls Twitter for new tweets and adds them to
+  #     the Amazon Kinesis stream.
+  #########################################################################################################
+  EventStreamProducerJava:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Scrape twitter and put events into Kinesis
+      FunctionName: !Sub ${AWS::StackName}-EventStreamProducerJava
+      MemorySize: 512
+      Role: !GetAtt EventStreamProducerJavaExecutionRole.Arn
+      Environment:
+        Variables:
+          LOG_LEVEL: INFO
+          KINESIS_STREAM_NAME: !Ref EventStream
+          WOEID: !Ref WhereOnEarthID
+          REGION: !Ref Region
+      Timeout: 90
+      Runtime: java8
+      # If this does not exist, run `mvn package` in the KPLProducer directory
+      CodeUri: src/lambda/producer-java-kpl/KPLProducer
+      Handler: kplproducer.KPLProducer::handleRequest
+      Events:
+        # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+        TriggerProducerLambda:
+          Type: Schedule
+          Properties:
+            Schedule: rate(10 minutes)
+            Name: trigger-kinesis-event-producer-java
+            Description: trigger kinesis event producer every 10 minutes
+            Enabled: True
+
+  EventStreamProducerJavaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-EventStreamProducerJavaExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-EventStreamProducerJavaExecutionPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:PutRecord
+                  - kinesis:DescribeStream
+                  - kinesis:PutRecords
+                Resource: !GetAtt EventStream.Arn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+  
+  #########################################################################################################
+  # Firehose S3 Bucket
+  # - This bucket will hold all of the firehose transformed records
+  #########################################################################################################
+  FirehoseS3Bucket:
+    Type: AWS::S3::Bucket
+  
+  #########################################################################################################
+  # Firehose Lambda Transformer
+  # - This lambda transforms the stream records before firehose writes them to s3
+  #########################################################################################################
+  FirehoseTransformLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Transform raw Twitter Statuses to condensed records
+      FunctionName: !Sub ${AWS::StackName}-FirehoseTransformLambda
+      MemorySize: 128
+      Role: !GetAtt FirehoseTransformExecutionRole.Arn
+      Timeout: 60
+      Runtime: python3.7
+      CodeUri: src/lambda/firehose-transformer/fh-transformer
+      Handler: main.lambda_handler
+  
+  FirehoseTransformExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-FirehoseTransformExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  #########################################################################################################
+  # Firehose Delivery Stream
+  # - This firehose delivery stream will hook into the lambda firehose transformer to transform
+  #   and drop records into the FirehoseS3Bucket
+  #########################################################################################################
+  FirehoseDeliveryStream:
+    Type: AWS::KinesisFirehose::DeliveryStream
+    DependsOn:
+    - FirehoseDeliveryPolicy
+    - FirehoseS3Bucket
+    - FirehoseS3Role
+    Properties:
+      DeliveryStreamType: KinesisStreamAsSource
+      KinesisStreamSourceConfiguration:
+        KinesisStreamARN: !GetAtt EventStream.Arn
+        RoleARN: !GetAtt FirehoseS3Role.Arn
+      ExtendedS3DestinationConfiguration:
+        BucketARN: !GetAtt FirehoseS3Bucket.Arn
+        BufferingHints:
+          IntervalInSeconds: 60
+          SizeInMBs: 5
+        CompressionFormat: "UNCOMPRESSED"
+        Prefix: records/
+        ErrorOutputPrefix: errors/
+        RoleARN: !GetAtt FirehoseS3Role.Arn
+        ProcessingConfiguration:
+          Enabled: True
+          Processors:
+            - Type: Lambda
+              Parameters:
+                - ParameterName: LambdaArn
+                  ParameterValue: !GetAtt FirehoseTransformLambda.Arn
+                - ParameterName: BufferSizeInMBs
+                  ParameterValue: 3
+                - ParameterName: BufferIntervalInSeconds
+                  ParameterValue: 60
+  
+  FirehoseS3Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service: firehose.amazonaws.com
+          Action: sts:AssumeRole
+  
+  FirehoseDeliveryPolicy:
+    Type: AWS::IAM::Policy
+    DependsOn:
+    - EventStream
+    Properties:
+      PolicyName: FirehosePolicy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        -
+          Effect: Allow
+          Action:
+          - s3:AbortMultipartUpload
+          - s3:GetBucketLocation
+          - s3:GetObject
+          - s3:ListBucket
+          - s3:ListBucketMultipartUploads
+          - s3:PutObject
+          Resource:
+              - !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref FirehoseS3Bucket
+              - !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref FirehoseS3Bucket
+                  - '*'
+        -
+          Effect: Allow
+          Action:
+            - lambda:InvokeFunction
+            - lambda:GetFunctionConfiguration
+          Resource: !GetAtt FirehoseTransformLambda.Arn
+        -
+          Effect: Allow
+          Action:
+            - kinesis:DescribeStream
+            - kinesis:GetShardIterator
+            - kinesis:GetRecords
+          Resource:
+            - !GetAtt EventStream.Arn
+        -
+          Effect: Allow
+          Action:
+            - logs:PutLogEvents
+          Resource:
+            - !Join
+              - ''
+              - - 'arn:aws:logs:'
+                - !Ref Region
+                - ':'
+                - !Ref 'AWS::AccountId'
+                - ':log-group:/aws/kinesisfirehose/'
+                - !Ref EventStream
+                - ':log-stream:*'
+      Roles:
+      - !Ref FirehoseS3Role
 
   #########################################################################################################
   # Event Data Table
@@ -187,3 +396,6 @@ Outputs:
     Value: !Ref EventDataTable
   EventDataTableArn:
     Value: !GetAtt EventDataTable.Arn
+  FirehoseS3BucketArn:
+    Value: !GetAtt FirehoseS3Bucket.Arn
+    Description: The Firehose S3 Bucket ARN.

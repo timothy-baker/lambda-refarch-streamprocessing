@@ -1,13 +1,19 @@
 package kplproducer;
 
+import twitter4j.Trend;
+import twitter4j.Trends;
 import twitter4j.Twitter;
+import twitter4j.conf.ConfigurationBuilder;
 import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
+import twitter4j.TwitterObjectFactory;
 import twitter4j.Status;
-import twitter4j.auth.AccessToken;
+// import twitter4j.auth.AccessToken;
 import twitter4j.Query;
 import twitter4j.QueryResult;
 import twitter4j.Query.ResultType;
+import twitter4j.ResponseList;
+import twitter4j.Location;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,7 +35,7 @@ public class TweetFetcher {
   static final String TWITTER_ACCESS_KEY = "/twitter/access_token_key";
   static final String TWITTER_ACCESS_SECRET = "/twitter/access_token_secret";
 
-  public static List<List<Status>> getTweets(String query) {
+  public static List<String> getTweets(int woeid) {
     // set up the parameters we want to fetch
     ArrayList<String> parameterSet = new ArrayList<String>();
     parameterSet.add(TWITTER_CONSUMER_KEY);
@@ -41,48 +47,53 @@ public class TweetFetcher {
     Map<String, String> twitterCreds = getParameterFromSSMByName(parameterSet);
 
     // pass the parameters to the queryTweets method
-    List<List<Status>> tweets = queryTweets(query, twitterCreds);
+    List<String> tweets = queryTweets(twitterCreds, woeid);
 
     return tweets;
   }
 
-  public static List<List<Status>> queryTweets(String queryString, Map<String, String> twitterCreds) {
-    // instantiate a factory
-    TwitterFactory factory = new TwitterFactory();
-    Twitter twitter = factory.getInstance();
+  public static List<String> queryTweets(Map<String, String> twitterCreds, int woeid) {
+    // instantiate a cb for the factory
+    ConfigurationBuilder cb = new ConfigurationBuilder();
+    cb.setJSONStoreEnabled(true);
 
     // handle OAuth1 setup
-    AccessToken accessToken = new AccessToken(twitterCreds.get(TWITTER_ACCESS_KEY), twitterCreds.get(TWITTER_ACCESS_SECRET));
-    twitter.setOAuthConsumer(twitterCreds.get(TWITTER_CONSUMER_KEY), twitterCreds.get(TWITTER_CONSUMER_SECRET));
-    twitter.setOAuthAccessToken(accessToken);
+    // AccessToken accessToken = new AccessToken(twitterCreds.get(TWITTER_ACCESS_KEY), twitterCreds.get(TWITTER_ACCESS_SECRET));
+    cb.setOAuthConsumerKey(twitterCreds.get(TWITTER_CONSUMER_KEY));
+    cb.setOAuthConsumerSecret(twitterCreds.get(TWITTER_CONSUMER_SECRET));
+    cb.setOAuthAccessToken(twitterCreds.get(TWITTER_ACCESS_KEY));
+    cb.setOAuthAccessTokenSecret(twitterCreds.get(TWITTER_ACCESS_SECRET));
 
-    // create a List of Lists to hold paginated results
-    List<List<Status>> tweets = new ArrayList<List<Status>>(100);
+    // construct the factory and instance
+    TwitterFactory factory = new TwitterFactory(cb.build());
+    Twitter twitter = factory.getInstance();
+
+    // create a List to hold JSON tweet strings
+    // 50 trends * 100 tweets (at max)
+    List<String> tweets = new ArrayList<String>(5000);
 
     try {
+      List<String> trends = getTrends(twitter, woeid);
+      // iterate over the trends and use them as search queries
+      for (String trend : trends) {
       // create the query and set the count per page and result_type
-      Query query = new Query(queryString);
-      query.setResultType(ResultType.recent);
-      query.setCount(PER_PAGE);
-      QueryResult result;
+        System.out.println("Fetching tweets for trend: " + trend);
+        Query query = new Query(trend);
+        query.setResultType(ResultType.recent);
+        query.setCount(PER_PAGE);
+        QueryResult result;
 
-      // Iterate for a pre-defined number of iterations.
-      // This allows us to let the producer send records
-      // in a secondary step where we aren't waiting for
-      // the tweet API to respond between puts
-      for(int i = 0; i < ITERATIONS+1; ++i) {
         result = twitter.search(query);
-        tweets.add(result.getTweets());
-        // if there are no more results just break out of the loop
-        if (result.hasNext()) {
-          query = result.nextQuery();
-        } else {
-          System.out.println("Max query reached");
-          break;
+        // iterate over the tweets, convert them to JSON strings and store
+        List<Status> results = result.getTweets();
+        for (Status r : results) {
+          tweets.add(TwitterObjectFactory.getRawJSON(r));
         }
       }
     } catch (TwitterException te) {
       te.printStackTrace();
+      System.out.println("Problem fetching tweets");
+      System.exit(1);
     }
     return tweets;
   }
@@ -98,12 +109,28 @@ public class TweetFetcher {
     // fetch the parameters based on the request
     GetParametersResult parameterResult = ssm.getParameters(parameterRequest);
 
-    // map the parameters by name to a hashmap
-    // so we can grab them by key
+    // map the parameters by name to a hashmap so we can grab them by key
     Map<String, String> config = new HashMap<>();
     parameterResult.getParameters().forEach(parameter -> {
       config.put(parameter.getName(), parameter.getValue());
     });
     return config;
+    }
+
+  public static List<String> getTrends(Twitter twitter, int woeid) {
+    // build a list of trends as strings from a given WOEID
+    List<String> trend_list = new ArrayList<String>();
+    try {
+      Trend[] trends = twitter.getPlaceTrends(woeid).getTrends();
+      for (Trend trend : trends) {
+        trend_list.add(trend.getName());
+      }
+      return trend_list;
+    } catch (TwitterException te) {
+      te.printStackTrace();
+      System.out.println("Failed to get trends for: " + woeid);
+      System.exit(1);
+      }
+    return null;
     }
   }
