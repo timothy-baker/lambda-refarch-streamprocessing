@@ -14,7 +14,7 @@ Resources:
       CodeUri: KPLProducer
       Handler: kplproducer.KPLProducer::handleRequest
       Runtime: java8
-      MemorySize: 512
+      MemorySize: 128
       Environment:
         Variables:
           KINESIS_STREAM_NAME: "sample-kpl-stream"
