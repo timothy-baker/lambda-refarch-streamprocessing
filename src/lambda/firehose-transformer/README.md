@@ -24,4 +24,4 @@ ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
 LOCATION 's3://<firehose-s3-bucket>/records/'
 ```
 
-This will create an external table in the default database which you can then preview and query the table from within Athena.
+This will create an external table in the default database which you can then preview and query with Athena.
