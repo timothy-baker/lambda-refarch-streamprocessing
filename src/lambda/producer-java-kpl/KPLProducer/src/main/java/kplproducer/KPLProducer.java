@@ -47,6 +47,7 @@ public class KPLProducer {
     }
 
     public void handleRequest(final Object input, final Context context) {
+        System.out.println("KPL Producer Initializing");
         // this is the main method called by lambda at execution
         int recordsProduced = 0;
         Map<String, String> kinesis_config = getEnvVars(config_parameters);
@@ -66,6 +67,7 @@ public class KPLProducer {
         // Iterate over the tweets and use addUserRecord
         // This method asynchronously aggregates and collects records
         // We generate a random hash to reduce shard heat
+        System.out.println("KPL Producer Begin Production");
         for (String trend: twitterTrends) {
             List<String> tweetList = TweetFetcher.queryTweets(twitter, trend);
             for(String tweet : tweetList) {
@@ -83,6 +85,7 @@ public class KPLProducer {
         producer.destroy();
         String records = Integer.toString(recordsProduced);
         System.out.println("Produced " + records + " records.");
+        System.out.println("KPL Producer Close");
     }
 
     public static KinesisProducer getKinesisProducer(String region) {

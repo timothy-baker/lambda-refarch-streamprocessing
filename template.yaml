@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
-Description: "Template to set up Kinesis stream, Lambda functions, S3 bucket, DynamoDB table and related IAM roles for AWS Lambda Real-time Stream Processing Reference Architecture."
+Description: "Template to set up Kinesis stream, Lambda functions, S3 bucket, Firehose Stream, DynamoDB table and related IAM roles for AWS Lambda Real-time Stream Processing Reference Architecture."
 
 # Parameters: 
 #   LambdaS3Bucket: 
@@ -104,7 +104,9 @@ Resources:
     Properties:
       Description: Scrape twitter and put events into Kinesis
       FunctionName: !Sub ${AWS::StackName}-EventStreamProducerJava
-      MemorySize: 512
+      # To reserve appropriate metaspace (10% of allocation) for lambda
+      # execution, set this to 256
+      MemorySize: 256
       Role: !GetAtt EventStreamProducerJavaExecutionRole.Arn
       Environment:
         Variables:
@@ -112,7 +114,7 @@ Resources:
           KINESIS_STREAM_NAME: !Ref EventStream
           WOEID: !Ref WhereOnEarthID
           REGION: !Ref Region
-      Timeout: 90
+      Timeout: 180
       Runtime: java8
       # If this does not exist, run `mvn package` in the KPLProducer directory
       CodeUri: src/lambda/producer-java-kpl/KPLProducer
@@ -150,6 +152,11 @@ Resources:
                   - kinesis:DescribeStream
                   - kinesis:PutRecords
                 Resource: !GetAtt EventStream.Arn
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource:
+                  - '*'
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
@@ -199,6 +206,7 @@ Resources:
   FirehoseDeliveryStream:
     Type: AWS::KinesisFirehose::DeliveryStream
     DependsOn:
+    - EventStream
     - FirehoseDeliveryPolicy
     - FirehoseS3Bucket
     - FirehoseS3Role

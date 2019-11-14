@@ -22,7 +22,7 @@ def cut_payload(payload):
     output_data['favorite_count'] = data['favorite_count']
     output_data['lang'] = data['lang']
     output_data['verified'] = data['user']['verified']
-    return json.dumps(output_data)
+    return json.dumps(output_data) + '\n'
 
 def make_timestamp(twitter_timestamp_string):
     return time.strftime(

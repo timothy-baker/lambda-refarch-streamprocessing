@@ -5,7 +5,7 @@ Description: "Sample SAM Template for kpl-lambda"
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 600
+    Timeout: 180
 
 Resources:
   KPLProducerFunction:
@@ -14,7 +14,7 @@ Resources:
       CodeUri: KPLProducer
       Handler: kplproducer.KPLProducer::handleRequest
       Runtime: java8
-      MemorySize: 128
+      MemorySize: 192
       Environment:
         Variables:
           KINESIS_STREAM_NAME: "sample-kpl-stream"

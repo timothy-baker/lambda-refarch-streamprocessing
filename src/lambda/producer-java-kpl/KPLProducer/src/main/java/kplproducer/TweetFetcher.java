@@ -25,8 +25,7 @@ import com.amazonaws.services.simplesystemsmanagement.model.GetParametersResult;
 import com.amazonaws.services.simplesystemsmanagement.model.GetParametersRequest;
 
 public class TweetFetcher {
-
-  static final int ITERATIONS = 5;
+  // Fetches Tweets on demand
   static final int PER_PAGE = 100;
 
   static final String TWITTER_CONSUMER_KEY = "/twitter/consumer_key";
@@ -55,6 +54,10 @@ public class TweetFetcher {
     cb.setOAuthAccessToken(twitterCreds.get(TWITTER_ACCESS_KEY));
     cb.setOAuthAccessTokenSecret(twitterCreds.get(TWITTER_ACCESS_SECRET));
 
+    // set read timeouts
+    cb.setHttpReadTimeout(5000);
+    cb.setHttpConnectionTimeout(5000);
+
     // construct the factory and instance
     TwitterFactory factory = new TwitterFactory(cb.build());
     return factory.getInstance();
@@ -69,14 +72,14 @@ public class TweetFetcher {
       Query query = new Query(trend);
       query.setResultType(ResultType.recent);
       query.setCount(PER_PAGE);
-      QueryResult result;
-
-      result = twitter.search(query);
+      QueryResult result = twitter.search(query);
       // iterate over the tweets, convert them to JSON strings and store
       List<Status> results = result.getTweets();
+      System.out.println("Got tweets, processing...");
       for (Status r : results) {
         tweets.add(TwitterObjectFactory.getRawJSON(r));
       }
+      System.out.println("Processed tweets for trend: " + trend);
     } catch (TwitterException te) {
       te.printStackTrace();
       System.out.println("Problem fetching tweets for trend: " + trend);
