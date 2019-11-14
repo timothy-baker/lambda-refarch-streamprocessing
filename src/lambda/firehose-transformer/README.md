@@ -2,7 +2,9 @@
 
 This lambda function is triggered by firehose when the configured buffer conditions are met.  Buffering is based on a timeout (seconds) and batch size (MB).  
 
-The Firehose Transformer shrinks the overall tweet status to only the relevant fields shown in the cut_payload function of main.py.  Enrichment steps can be added to this transform as well.  Note that the final line of cut_payload appends a '\n' character to the record.  This enables Athena to recognize one record from another and produces rows delimited by the '\n' character.  
+The Firehose Transformer shrinks the overall tweet status to only the relevant fields shown in the cut_payload function of fh-transformer/main.py.  Enrichment steps can be added to this transform as well.  
+
+Note that the final line of cut_payload appends a '\n' character to the record.  This enables Athena to distinguish one record from another and produces rows delimited by the '\n' character.  
 
 # Athena
 
