@@ -7,11 +7,11 @@ Description: "Template to set up Kinesis stream, Lambda functions, S3 bucket, Fi
 #     Type: String
 #     Default: awslambda-reference-architectures
 #     Description: Name of S3 bucket where Lambda function packages are stored.
-#   LambdaEventStreamConsumerS3Key:
+#   LambdaDataStreamConsumerS3Key:
 #     Type : String
 #     Default : stream-processing/ddb_eventprocessor.zip
 #     Description : Name of S3 key for Zip with Stream Processing DynamoDB Event Processor Lambda function package.
-#   LambdaEventStreamConsumerHandler:
+#   LambdaDataStreamConsumerHandler:
 #     Type : String
 #     Default : ddb_eventprocessor.handler
 #     Description : Name of handler for Stream Processing DynamoDB Event Processor Lambda function.
@@ -32,7 +32,7 @@ Resources:
   # Event Stream
   #   - Creates the Amazon Kinesis Stream resources
   #########################################################################################################
-  EventStream:
+  DataStream:
     Type: AWS::Kinesis::Stream
     Properties:
       ShardCount: 1
@@ -42,17 +42,17 @@ Resources:
   #   - Creates a Lambda function in Phython which polls Twitter for new tweets and adds them to
   #     the Amazon Kinesis stream.
   #########################################################################################################
-  EventStreamProducerPython:
+  DataStreamProducerPython:
     Type: AWS::Serverless::Function
     Properties:
       Description: Scrape twitter and put events into Kinesis
-      FunctionName: !Sub ${AWS::StackName}-EventStreamProducerPython
-      MemorySize: 512
-      Role: !GetAtt EventStreamProducerPythonExecutionRole.Arn
+      FunctionName: !Sub ${AWS::StackName}-DataStreamProducerPython
+      MemorySize: 256
+      Role: !GetAtt DataStreamProducerPythonExecutionRole.Arn
       Environment:
         Variables:
           LOG_LEVEL: INFO
-          KINESIS_STREAM_NAME: !Ref EventStream
+          KINESIS_STREAM_NAME: !Ref DataStream
           WOEID: !Ref WhereOnEarthID
       Timeout: 600
       Runtime: python3.7
@@ -64,14 +64,15 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: rate(10 minutes)
-            Name: trigger-kinesis-event-producer
-            Description: trigger kinesis event producer every 30 minutes
+            Name: !Sub ${AWS::StackName}-DataStreamProducerPython-Trigger
+            Description: Trigger function every 10 minutes
             Enabled: True
+    DependsOn: DataStream
 
-  EventStreamProducerPythonExecutionRole:
+  DataStreamProducerPythonExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AWS::StackName}-EventStreamProducerPythonExecutionRole
+      RoleName: !Sub ${AWS::StackName}-DataStreamProducerPythonExecutionRole
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -81,14 +82,14 @@ Resources:
             Action: sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: !Sub ${AWS::StackName}-EventStreamProducerPythonExecutionPolicy
+        - PolicyName: !Sub ${AWS::StackName}-DataStreamProducerPythonExecutionPolicy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
               - Effect: Allow
                 Action:
                   - kinesis:PutRecord
-                Resource: !GetAtt EventStream.Arn
+                Resource: !GetAtt DataStream.Arn
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
@@ -98,19 +99,19 @@ Resources:
   #   - Creates a Lambda function in Java which polls Twitter for new tweets and adds them to
   #     the Amazon Kinesis stream.
   #########################################################################################################
-  EventStreamProducerJava:
+  DataStreamProducerJava:
     Type: AWS::Serverless::Function
     Properties:
       Description: Scrape twitter and put events into Kinesis
-      FunctionName: !Sub ${AWS::StackName}-EventStreamProducerJava
+      FunctionName: !Sub ${AWS::StackName}-DataStreamProducerJava
       # To reserve appropriate metaspace (10% of allocation) for lambda
       # execution, set this to 256
       MemorySize: 256
-      Role: !GetAtt EventStreamProducerJavaExecutionRole.Arn
+      Role: !GetAtt DataStreamProducerJavaExecutionRole.Arn
       Environment:
         Variables:
           LOG_LEVEL: INFO
-          KINESIS_STREAM_NAME: !Ref EventStream
+          KINESIS_STREAM_NAME: !Ref DataStream
           WOEID: !Ref WhereOnEarthID
           REGION: !Ref Region
       Timeout: 600
@@ -124,14 +125,15 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: rate(10 minutes)
-            Name: trigger-kinesis-event-producer-java
-            Description: trigger kinesis event producer every 10 minutes
+            Name: !Sub ${AWS::StackName}-DataStreamProducerJava-Trigger
+            Description: Trigger function every 10 minutes
             Enabled: True
+    DependsOn: DataStream
 
-  EventStreamProducerJavaExecutionRole:
+  DataStreamProducerJavaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AWS::StackName}-EventStreamProducerJavaExecutionRole
+      RoleName: !Sub ${AWS::StackName}-DataStreamProducerJavaExecutionRole
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -141,7 +143,7 @@ Resources:
             Action: sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: !Sub ${AWS::StackName}-EventStreamProducerJavaExecutionPolicy
+        - PolicyName: !Sub ${AWS::StackName}-DataStreamProducerJavaExecutionPolicy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -150,7 +152,7 @@ Resources:
                   - kinesis:PutRecord
                   - kinesis:DescribeStream
                   - kinesis:PutRecords
-                Resource: !GetAtt EventStream.Arn
+                Resource: !GetAtt DataStream.Arn
               - Effect: Allow
                 Action:
                   - cloudwatch:PutMetricData
@@ -175,7 +177,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Description: Transform raw Twitter Statuses to condensed records
-      FunctionName: !Sub ${AWS::StackName}-FirehoseTransformLambda
+      FunctionName: !Sub ${AWS::StackName}-FirehoseTransformer
       MemorySize: 128
       Role: !GetAtt FirehoseTransformExecutionRole.Arn
       Timeout: 60
@@ -205,14 +207,14 @@ Resources:
   FirehoseDeliveryStream:
     Type: AWS::KinesisFirehose::DeliveryStream
     DependsOn:
-      - EventStream
+      - DataStream
       - FirehoseDeliveryPolicy
       - FirehoseS3Bucket
       - FirehoseS3Role
     Properties:
       DeliveryStreamType: KinesisStreamAsSource
       KinesisStreamSourceConfiguration:
-        KinesisStreamARN: !GetAtt EventStream.Arn
+        KinesisStreamARN: !GetAtt DataStream.Arn
         RoleARN: !GetAtt FirehoseS3Role.Arn
       ExtendedS3DestinationConfiguration:
         BucketARN: !GetAtt FirehoseS3Bucket.Arn
@@ -250,7 +252,7 @@ Resources:
   FirehoseDeliveryPolicy:
     Type: AWS::IAM::Policy
     DependsOn:
-      - EventStream
+      - DataStream
     Properties:
       PolicyName: FirehosePolicy
       PolicyDocument:
@@ -285,7 +287,7 @@ Resources:
               - kinesis:GetShardIterator
               - kinesis:GetRecords
             Resource:
-              - !GetAtt EventStream.Arn
+              - !GetAtt DataStream.Arn
           - Effect: Allow
             Action:
               - logs:PutLogEvents
@@ -297,7 +299,7 @@ Resources:
                   - ":"
                   - !Ref "AWS::AccountId"
                   - ":log-group:/aws/kinesisfirehose/"
-                  - !Ref EventStream
+                  - !Ref DataStream
                   - ":log-stream:*"
       Roles:
         - !Ref FirehoseS3Role
@@ -307,7 +309,7 @@ Resources:
   #   - Creates a DyanmoDB table where the streaming data will be persisted.
   #   - The table will use On-Demand pricing and have TTL enabled.
   #   - The TTL variable will prevent unexpected storage costs by removing stale items after 1 day
-  #     (per EventStreamConsumer Lambda configuraiton)
+  #     (per DataStreamConsumer Lambda configuraiton)
   #########################################################################################################
   EventDataTable:
     Type: AWS::DynamoDB::Table
@@ -333,12 +335,12 @@ Resources:
   #   - Creates a Lambda function in Node.js which reads from the Kinesis Stream in batches of 25 items
   #     and persists the stream records into a DynamoDB table.
   #########################################################################################################
-  EventStreamConsumer:
+  DataStreamConsumer:
     Type: AWS::Serverless::Function
     Properties:
       Description: Stream Processing DDB Event Processor
-      FunctionName: !Sub ${AWS::StackName}-EventStreamConsumer
-      Role: !GetAtt EventStreamConsumerExecutionRole.Arn
+      FunctionName: !Sub ${AWS::StackName}-DataStreamConsumer
+      Role: !GetAtt DataStreamConsumerExecutionRole.Arn
       MemorySize: 128
       Timeout: 20
       Environment:
@@ -349,21 +351,21 @@ Resources:
       CodeUri:
         src/lambda/consumer
         # Bucket: !Ref LambdaS3Bucket
-        # Key: !Ref LambdaEventStreamConsumerS3Key
+        # Key: !Ref LambdaDataStreamConsumerS3Key
       Handler: ddb_eventprocessor.handler
-      # Handler: !Ref LambdaEventStreamConsumerHandler
+      # Handler: !Ref LambdaDataStreamConsumerHandler
       Events:
         Stream:
           Type: Kinesis
           Properties:
-            Stream: !GetAtt EventStream.Arn
+            Stream: !GetAtt DataStream.Arn
             StartingPosition: TRIM_HORIZON
             BatchSize: 25
 
-  EventStreamConsumerExecutionRole:
+  DataStreamConsumerExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AWS::StackName}-EventStreamConsumerExecutionRole
+      RoleName: !Sub ${AWS::StackName}-DataStreamConsumerExecutionRole
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -372,7 +374,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: !Sub ${AWS::StackName}-EventStreamConsumerExecutionPolicy
+        - PolicyName: !Sub ${AWS::StackName}-DataStreamConsumerExecutionPolicy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -390,11 +392,11 @@ Resources:
 Outputs:
   Region:
     Value: !Ref AWS::Region
-  EventStreamName:
-    Value: !Ref EventStream
+  DataStreamName:
+    Value: !Ref DataStream
     Description: The Amazon Kinesis stream name.
-  EventStreamArn:
-    Value: !GetAtt EventStream.Arn
+  DataStreamArn:
+    Value: !GetAtt DataStream.Arn
     Description: The Amazon Kinesis stream ARN.
   EventDataTableName:
     Value: !Ref EventDataTable
