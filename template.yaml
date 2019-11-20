@@ -2,8 +2,8 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: "Template to set up Kinesis stream, Lambda functions, S3 bucket, Firehose Stream, DynamoDB table and related IAM roles for AWS Lambda Real-time Stream Processing Reference Architecture."
 
-# Parameters: 
-#   LambdaS3Bucket: 
+# Parameters:
+#   LambdaS3Bucket:
 #     Type: String
 #     Default: awslambda-reference-architectures
 #     Description: Name of S3 bucket where Lambda function packages are stored.
@@ -15,7 +15,7 @@ Description: "Template to set up Kinesis stream, Lambda functions, S3 bucket, Fi
 #     Type : String
 #     Default : ddb_eventprocessor.handler
 #     Description : Name of handler for Stream Processing DynamoDB Event Processor Lambda function.
-Parameters: 
+Parameters:
   # https://developer.twitter.com/en/docs/trends/trends-for-location/api-reference/get-trends-place
   # Yahoo! Where on Earth ID (WOEID)
   WhereOnEarthID:
@@ -28,7 +28,6 @@ Parameters:
     Default: us-east-1
 
 Resources:
-
   #########################################################################################################
   # Event Stream
   #   - Creates the Amazon Kinesis Stream resources
@@ -37,7 +36,7 @@ Resources:
     Type: AWS::Kinesis::Stream
     Properties:
       ShardCount: 1
-  
+
   #########################################################################################################
   # Event Stream Producer - Python
   #   - Creates a Lambda function in Phython which polls Twitter for new tweets and adds them to
@@ -55,7 +54,7 @@ Resources:
           LOG_LEVEL: INFO
           KINESIS_STREAM_NAME: !Ref EventStream
           WOEID: !Ref WhereOnEarthID
-      Timeout: 900
+      Timeout: 600
       Runtime: python3.7
       CodeUri: src/lambda/producer-python
       Handler: main.lambda_handler
@@ -64,7 +63,7 @@ Resources:
         TriggerProducerLambda:
           Type: Schedule
           Properties:
-            Schedule: rate(30 minutes)
+            Schedule: rate(10 minutes)
             Name: trigger-kinesis-event-producer
             Description: trigger kinesis event producer every 30 minutes
             Enabled: True
@@ -93,7 +92,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
-  
+
   #########################################################################################################
   # Event Stream Producer - Java
   #   - Creates a Lambda function in Java which polls Twitter for new tweets and adds them to
@@ -114,7 +113,7 @@ Resources:
           KINESIS_STREAM_NAME: !Ref EventStream
           WOEID: !Ref WhereOnEarthID
           REGION: !Ref Region
-      Timeout: 180
+      Timeout: 600
       Runtime: java8
       # If this does not exist, run `mvn package` in the KPLProducer directory
       CodeUri: src/lambda/producer-java-kpl/KPLProducer
@@ -156,18 +155,18 @@ Resources:
                 Action:
                   - cloudwatch:PutMetricData
                 Resource:
-                  - '*'
+                  - "*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
-  
+
   #########################################################################################################
   # Firehose S3 Bucket
   # - This bucket will hold all of the firehose transformed records
   #########################################################################################################
   FirehoseS3Bucket:
     Type: AWS::S3::Bucket
-  
+
   #########################################################################################################
   # Firehose Lambda Transformer
   # - This lambda transforms the stream records before firehose writes them to s3
@@ -183,7 +182,7 @@ Resources:
       Runtime: python3.7
       CodeUri: src/lambda/firehose-transformer/fh-transformer
       Handler: main.lambda_handler
-  
+
   FirehoseTransformExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -206,10 +205,10 @@ Resources:
   FirehoseDeliveryStream:
     Type: AWS::KinesisFirehose::DeliveryStream
     DependsOn:
-    - EventStream
-    - FirehoseDeliveryPolicy
-    - FirehoseS3Bucket
-    - FirehoseS3Role
+      - EventStream
+      - FirehoseDeliveryPolicy
+      - FirehoseS3Bucket
+      - FirehoseS3Role
     Properties:
       DeliveryStreamType: KinesisStreamAsSource
       KinesisStreamSourceConfiguration:
@@ -235,77 +234,73 @@ Resources:
                   ParameterValue: 3
                 - ParameterName: BufferIntervalInSeconds
                   ParameterValue: 60
-  
+
   FirehoseS3Role:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-        - Sid: ''
-          Effect: Allow
-          Principal:
-            Service: firehose.amazonaws.com
-          Action: sts:AssumeRole
-  
+          - Sid: ""
+            Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: sts:AssumeRole
+
   FirehoseDeliveryPolicy:
     Type: AWS::IAM::Policy
     DependsOn:
-    - EventStream
+      - EventStream
     Properties:
       PolicyName: FirehosePolicy
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
-        -
-          Effect: Allow
-          Action:
-          - s3:AbortMultipartUpload
-          - s3:GetBucketLocation
-          - s3:GetObject
-          - s3:ListBucket
-          - s3:ListBucketMultipartUploads
-          - s3:PutObject
-          Resource:
+          - Effect: Allow
+            Action:
+              - s3:AbortMultipartUpload
+              - s3:GetBucketLocation
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:ListBucketMultipartUploads
+              - s3:PutObject
+            Resource:
               - !Join
-                - ''
-                - - 'arn:aws:s3:::'
+                - ""
+                - - "arn:aws:s3:::"
                   - !Ref FirehoseS3Bucket
               - !Join
-                - ''
-                - - 'arn:aws:s3:::'
+                - ""
+                - - "arn:aws:s3:::"
                   - !Ref FirehoseS3Bucket
-                  - '*'
-        -
-          Effect: Allow
-          Action:
-            - lambda:InvokeFunction
-            - lambda:GetFunctionConfiguration
-          Resource: !GetAtt FirehoseTransformLambda.Arn
-        -
-          Effect: Allow
-          Action:
-            - kinesis:DescribeStream
-            - kinesis:GetShardIterator
-            - kinesis:GetRecords
-          Resource:
-            - !GetAtt EventStream.Arn
-        -
-          Effect: Allow
-          Action:
-            - logs:PutLogEvents
-          Resource:
-            - !Join
-              - ''
-              - - 'arn:aws:logs:'
-                - !Ref Region
-                - ':'
-                - !Ref 'AWS::AccountId'
-                - ':log-group:/aws/kinesisfirehose/'
-                - !Ref EventStream
-                - ':log-stream:*'
+                  - "*"
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+              - lambda:GetFunctionConfiguration
+            Resource: !GetAtt FirehoseTransformLambda.Arn
+          - Effect: Allow
+            Action:
+              - kinesis:DescribeStream
+              - kinesis:GetShardIterator
+              - kinesis:GetRecords
+            Resource:
+              - !GetAtt EventStream.Arn
+          - Effect: Allow
+            Action:
+              - logs:PutLogEvents
+            Resource:
+              - !Join
+                - ""
+                - - "arn:aws:logs:"
+                  - !Ref Region
+                  - ":"
+                  - !Ref "AWS::AccountId"
+                  - ":log-group:/aws/kinesisfirehose/"
+                  - !Ref EventStream
+                  - ":log-stream:*"
       Roles:
-      - !Ref FirehoseS3Role
+        - !Ref FirehoseS3Role
 
   #########################################################################################################
   # Event Data Table
@@ -351,7 +346,8 @@ Resources:
           DDB_TABLE: !Ref EventDataTable
           DDB_TTL_DAYS: 1
       Runtime: nodejs10.x
-      CodeUri: src/lambda/consumer
+      CodeUri:
+        src/lambda/consumer
         # Bucket: !Ref LambdaS3Bucket
         # Key: !Ref LambdaEventStreamConsumerS3Key
       Handler: ddb_eventprocessor.handler
