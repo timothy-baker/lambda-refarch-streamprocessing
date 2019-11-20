@@ -18,7 +18,7 @@ import logging
 import os
 import sys
 
-from TwitterAPI import TwitterAPI,TwitterRequestError
+from TwitterAPI import TwitterAPI, TwitterRequestError
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "").upper()
 if LOG_LEVEL == "":
@@ -33,6 +33,7 @@ try:
 except Exception as e:
     logger.exception("Environment Variable KINESIS_STREAM_NAME not set")
     raise
+
 
 def getTwitterCreds():
     ssm = boto3.client('ssm')
@@ -60,6 +61,7 @@ def getTwitterCreds():
             'body': 'Problem getting Twitter credentials from AWS SSM'
         }
 
+
 # Twitter OAuth Tokens
 twitterCreds = getTwitterCreds()
 consumer_key = twitterCreds['twitter_consumer_key']
@@ -68,54 +70,58 @@ access_token_key = twitterCreds['twitter_access_token_key']
 access_token_secret = twitterCreds['twitter_access_token_secret']
 
 # Setting up Twitter and Kinesis objects
-twitter_api = TwitterAPI(consumer_key, consumer_secret, access_token_key, access_token_secret)
+twitter_api = TwitterAPI(consumer_key, consumer_secret,
+                         access_token_key, access_token_secret)
 kinesis = boto3.client('kinesis')
 
-def lambda_handler(event,context):
+
+def lambda_handler(event, context):
     logger.info('Incoming Event: {0}'.format(event))
     try:
-        logger.info('Get top 50 trending topics for given WOED: {0}'.format(os.environ['WOEID']))
+        logger.info('Get top 50 trending topics for given WOED: {0}'.format(
+            os.environ['WOEID']))
         top_trend = get_top_trend(os.environ['WOEID'])
 
         logger.info('Get public statuses for trend {0}'.format(top_trend))
-        response = twitter_api.request('statuses/filter', {'track': top_trend })
+        response = twitter_api.request('statuses/filter', {'track': top_trend})
 
-        logger.info('Putting records to Kinesis stream : {0}'.format(kinesis_stream_name))
+        logger.info('Putting records to Kinesis stream : {0}'.format(
+            kinesis_stream_name))
 
         # Writes new tweets into Kinesis
         for item in response:
             if 'text' in item:
-                kinesis.put_record(StreamName=kinesis_stream_name, Data=json.dumps(item), PartitionKey=item['user']['screen_name'])
+                kinesis.put_record(StreamName=kinesis_stream_name, Data=json.dumps(
+                    item), PartitionKey=item['user']['screen_name'])
                 logger.debug(item['text'])
 
     except TwitterRequestError as e:
-        logger.error('TwitterRequestError_Code: {0}'.format(e.status_code) )
-        logger.error('TwitterRequestError_Details: {0}'.format(response.json()['errors'][0]))
+        logger.error('TwitterRequestError_Code: {0}'.format(e.status_code))
+        logger.error('TwitterRequestError_Details: {0}'.format(
+            response.json()['errors'][0]))
     except:
-        logger.error('Error : {0}'.format(sys.exc_info()) )
-        logger.error('Unable to put {0} to stream'.format(item['text']) )
+        logger.error('Error : {0}'.format(sys.exc_info()))
+        logger.error('Unable to put {0} to stream'.format(item['text']))
         raise Exception('General Exception'.format(sys.exc_info()))
 
     logger.info('Processing Complete')
 
     return {
-            'statusCode': 200,
-            'body': 'Processing Complete'
-        }
+        'statusCode': 200,
+        'body': 'Processing Complete'
+    }
 
 
 def get_top_trend(location_id):
-    response = twitter_api.request('trends/place', {'id': location_id } )
+    response = twitter_api.request('trends/place', {'id': location_id})
     trends = []
     for item in response.get_iterator():
         trends.append(item)
-    
+
     # sort all trends by tweet_volume
-    trends = sorted(trends, key= lambda i : (i['tweet_volume'] is None, 0))
+    trends = sorted(trends, key=lambda i: (i['tweet_volume'] is None, 0))
     if len(trends) > 1:
         top_trend = trends[0]
         return top_trend['name']
     else:
         return '#serverless'
-  
-
