@@ -3,3 +3,4 @@ packaged.yaml
 .aws-**
 producer-template-packaged.yaml
 deploy.sh
+.DS_Store
