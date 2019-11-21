@@ -386,6 +386,50 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaKinesisExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
+  #########################################################################################################
+  # Event Stream Consumer
+  #   - Creates a Lambda function in Node.js which reads from the Kinesis Stream in batches of 25 items
+  #     and persists the stream records into a DynamoDB table.
+  #########################################################################################################
+  Kickoff:
+    Type: Custom::Kickoff
+    Properties:
+      ServiceToken: !GetAtt KickoffFunction.Arn
+      Region: !Sub Region
+      ProducerJavaArn: !GetAtt DataStreamProducerJava.Arn
+      ProducerPythonArn: !GetAtt DataStreamProducerPython.Arn
+    DependsOn:
+      - DataStreamProducerJava
+      - DataStreamProducerPython
+
+  KickoffFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Stream Processing DDB Event Processor
+      FunctionName: !Sub ${AWS::StackName}-KickoffFunction
+      CodeUri: src/lambda/kickoff-function
+      Handler: kickoff.handler
+      Role: !GetAtt KickoffFunctionExecutionRole.Arn
+      Runtime: nodejs10.x
+      MemorySize: 128
+      Timeout: 30
+    DependsOn: KickoffFunctionExecutionRole
+
+  KickoffFunctionExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-KickoffFunctionExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+
 #########################################################################################################
 # Stack Outputs
 #########################################################################################################
