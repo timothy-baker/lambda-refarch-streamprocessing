@@ -15,8 +15,11 @@ console.log("Loading function");
 
 const AWS = require("aws-sdk");
 const doc = new AWS.DynamoDB.DocumentClient();
+const sqs = new AWS.SQS();
+
 const ddbTableName = process.env.DDB_TABLE;
 const ddbTtlDays = process.env.DDB_TTL_DAYS;
+const dlqUrl = process.env.DLQ_URL;
 
 // Set a TTL for DynamoDB records:
 // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/howitworks-ttl.html
@@ -96,7 +99,20 @@ function unpackItems(records) {
         });
       }
     } catch (e) {
-      console.log("Unable to parse record. Skipping.");
+      // send message to DLQ and continue
+      console.log('writing to DLQ:',payload);
+
+      var params = {
+        MessageBody: payload,
+        QueueUrl: dlqUrl
+      };
+      sqs.sendMessage(params, function(err,data){
+        if(err) {
+          console.log('error:',"Fail Send Message" + err);
+        }else{
+          console.log('skipped message:',data.MessageId);
+        }
+      });
     }
   });
 
@@ -112,6 +128,7 @@ function unpackItems(records) {
  * @param {Number} retries Number of retries
  */
 async function writeItems(items, retries) {
+  console.log('items: ', items)
   return new Promise(function(accept, reject) {
     doc.batchWrite({ RequestItems: items }, function(err, data) {
       if (err) {

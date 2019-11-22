@@ -335,6 +335,11 @@ Resources:
   #   - Creates a Lambda function in Node.js which reads from the Kinesis Stream in batches of 25 items
   #     and persists the stream records into a DynamoDB table.
   #########################################################################################################
+  DLQ:
+    Type: AWS::SQS::Queue
+    Properties: 
+      QueueName: !Sub DLQ-${DataStream}
+
   DataStreamConsumer:
     Type: AWS::Serverless::Function
     Properties:
@@ -347,6 +352,7 @@ Resources:
         Variables:
           DDB_TABLE: !Ref EventDataTable
           DDB_TTL_DAYS: 1
+          DLQ_URL: !Ref DLQ
       Runtime: nodejs10.x
       CodeUri:
         src/lambda/consumer
@@ -382,6 +388,10 @@ Resources:
                 Action:
                   - dynamodb:BatchWriteItem
                 Resource: !GetAtt EventDataTable.Arn
+              - Effect: Allow
+                Action: 
+                  - sqs:SendMessage
+                Resource: !GetAtt DLQ.Arn
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaKinesisExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
