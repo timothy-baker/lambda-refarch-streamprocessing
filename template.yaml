@@ -451,7 +451,7 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: StreamName
-          Value: !GetAtt DataStream.Arn
+          Value: !Ref DataStream
       EvaluationPeriods: 4
       DatapointsToAlarm: 3
       MetricName: GetRecords.IteratorAgeMilliseconds
@@ -470,7 +470,7 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: StreamName
-          Value: !GetAtt DataStream.Arn
+          Value: !Ref DataStream
       EvaluationPeriods: 4
       DatapointsToAlarm: 3
       MetricName: ReadProvisionedThroughputExceeded
@@ -489,7 +489,7 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: StreamName
-          Value: !GetAtt DataStream.Arn
+          Value: !Ref DataStream
       EvaluationPeriods: 4
       DatapointsToAlarm: 3
       MetricName: WriteProvisionedThroughputExceeded
