@@ -430,6 +430,75 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
 
+  #########################################################################################################
+  # Monitor Kinesis Stream 
+  # https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html#kinesis-metric-use
+  #   - ReadProvisionedThroughputExceeded
+  #   - WriteProvisionedThroughputExceeded	
+  #   - GetRecords.IteratorAgeMilliseconds
+  #########################################################################################################
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: Data Stream Monitoring
+
+  MonitorIteratorAge:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref SNSTopic
+      AlarmDescription: Monitor Data Stream Iterator Age
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: StreamName
+          Value: !GetAtt DataStream.Arn
+      EvaluationPeriods: 4
+      DatapointsToAlarm: 3
+      MetricName: GetRecords.IteratorAgeMilliseconds
+      Namespace: AWS/Kinesis
+      Period: 300
+      Statistic: Maximum
+      Threshold: 6000000
+      TreatMissingData: missing
+
+  MonitorReadThroughput:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref SNSTopic
+      AlarmDescription: Monitor Data Stream Read Provisioned Throughput 
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: StreamName
+          Value: !GetAtt DataStream.Arn
+      EvaluationPeriods: 4
+      DatapointsToAlarm: 3
+      MetricName: ReadProvisionedThroughputExceeded
+      Namespace: AWS/Kinesis
+      Period: 300
+      Statistic: Average
+      Threshold: 10
+      TreatMissingData: missing
+
+  MonitorWriteThroughput:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref SNSTopic
+      AlarmDescription: Monitor Data Stream Write Provisioned Throughput 
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: StreamName
+          Value: !GetAtt DataStream.Arn
+      EvaluationPeriods: 4
+      DatapointsToAlarm: 3
+      MetricName: WriteProvisionedThroughputExceeded
+      Namespace: AWS/Kinesis
+      Period: 300
+      Statistic: Average
+      Threshold: 10
+      TreatMissingData: missing
+
 #########################################################################################################
 # Stack Outputs
 #########################################################################################################
