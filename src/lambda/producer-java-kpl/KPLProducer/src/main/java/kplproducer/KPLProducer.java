@@ -1,5 +1,8 @@
 package kplproducer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import twitter4j.Twitter;
 
 import java.util.List;
@@ -7,8 +10,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.HashMap;
 import java.math.BigInteger;
-import java.util.LinkedList;
-import java.util.concurrent.Future;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -17,13 +18,14 @@ import kplproducer.TweetFetcher;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
-import com.amazonaws.services.kinesis.producer.UserRecordResult;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 
 
 public class KPLProducer {
     // This producer is based on the more feature-rich sample producer
     // found at https://github.com/awslabs/amazon-kinesis-producer
+
+    final Logger logger = LoggerFactory.getLogger(KPLProducer.class);
 
     // We'll use this for our hash key
     private static final Random RANDOM = new Random();
@@ -47,19 +49,22 @@ public class KPLProducer {
     }
 
     public void handleRequest(final Object input, final Context context) {
-        System.out.println("KPL Producer Initializing");
+        logger.info("KPL Producer Initializing");
         // this is the main method called by lambda at execution
         int recordsProduced = 0;
         Map<String, String> kinesis_config = getEnvVars(config_parameters);
         String STREAM_NAME = kinesis_config.get("KINESIS_STREAM_NAME");
+        logger.debug("STREAM_NAME = " + STREAM_NAME);
         String REGION = kinesis_config.get("REGION");
+        logger.debug("REGION = " + REGION);
         int WOEID = Integer.parseInt(kinesis_config.get("WOEID"));
+        logger.debug("WOEID = " + WOEID);
 
         // Create our Tweet Fetcher with the given config
         Twitter twitter = TweetFetcher.getTwitterInstance();
 
         // Get a list of trends to fetch based on the WOEID
-        List<String> twitterTrends = TweetFetcher.getTrends(twitter, WOEID);
+        List<String> twitterTrends = TweetFetcher.getTrends(twitter, WOEID, logger);
 
         // Create a kinesis producer
         final KinesisProducer producer = getKinesisProducer(REGION);
@@ -67,9 +72,9 @@ public class KPLProducer {
         // Iterate over the tweets and use addUserRecord
         // This method asynchronously aggregates and collects records
         // We generate a random hash to reduce shard heat
-        System.out.println("KPL Producer Begin Production");
+        logger.info("KPL Producer Begin Production");
         for (String trend: twitterTrends) {
-            List<String> tweetList = TweetFetcher.queryTweets(twitter, trend);
+            List<String> tweetList = TweetFetcher.queryTweets(twitter, trend, logger);
             for(String tweet : tweetList) {
                 ByteBuffer data = makeEntry(tweet);
                 // doesn't block
@@ -78,14 +83,13 @@ public class KPLProducer {
             }
         }
 
-        System.out.println("Flushing records");
+        logger.info("Flushing records");
         // Flush any buffered records yet to be sent
         producer.flushSync();
         // Kill the child process and any threads managing it
         producer.destroy();
         String records = Integer.toString(recordsProduced);
-        System.out.println("Produced " + records + " records.");
-        System.out.println("KPL Producer Close");
+        logger.info("Produced " + records + " records.");
     }
 
     public static KinesisProducer getKinesisProducer(String region) {
@@ -117,7 +121,7 @@ public class KPLProducer {
             if (value != null) {
                 kinesis_config.put(env, value);
             } else {
-                System.out.println("Missing ENV VAR: " + env);
+                logger.error("Missing ENV VAR: " + env);
                 System.exit(1);
             }
         }

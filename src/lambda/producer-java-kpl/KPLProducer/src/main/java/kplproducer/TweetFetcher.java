@@ -1,7 +1,8 @@
 package kplproducer;
 
+import org.slf4j.Logger;
+
 import twitter4j.Trend;
-import twitter4j.Trends;
 import twitter4j.Twitter;
 import twitter4j.conf.ConfigurationBuilder;
 import twitter4j.TwitterException;
@@ -11,8 +12,6 @@ import twitter4j.Status;
 import twitter4j.Query;
 import twitter4j.QueryResult;
 import twitter4j.Query.ResultType;
-import twitter4j.ResponseList;
-import twitter4j.Location;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,26 +62,26 @@ public class TweetFetcher {
     return factory.getInstance();
   }
 
-  public static List<String> queryTweets(Twitter twitter, String trend) {
+  public static List<String> queryTweets(Twitter twitter, String trend, Logger logger) {
     // Fetch 100 tweets at a time
     List<String> tweets = new ArrayList<String>(100);
     try {
       // create the query and set the count per page and result_type
-      System.out.println("Fetching tweets for trend: " + trend);
+      logger.info("Fetching tweets for trend: " + trend);
       Query query = new Query(trend);
       query.setResultType(ResultType.recent);
       query.setCount(PER_PAGE);
       QueryResult result = twitter.search(query);
       // iterate over the tweets, convert them to JSON strings and store
       List<Status> results = result.getTweets();
-      System.out.println("Got tweets, processing...");
+      logger.info("Got tweets, processing...");
       for (Status r : results) {
         tweets.add(TwitterObjectFactory.getRawJSON(r));
       }
-      System.out.println("Processed tweets for trend: " + trend);
+      logger.info("Processed tweets for trend: " + trend);
     } catch (TwitterException te) {
       te.printStackTrace();
-      System.out.println("Problem fetching tweets for trend: " + trend);
+      logger.error("Problem fetching tweets for trend: " + trend);
     }
     return tweets;
   }
@@ -106,7 +105,7 @@ public class TweetFetcher {
     return config;
     }
 
-  public static List<String> getTrends(Twitter twitter, int woeid) {
+  public static List<String> getTrends(Twitter twitter, int woeid, Logger logger) {
     // build a list of trends as strings from a given WOEID
     List<String> trend_list = new ArrayList<String>();
     try {
@@ -117,7 +116,7 @@ public class TweetFetcher {
       return trend_list;
     } catch (TwitterException te) {
       te.printStackTrace();
-      System.out.println("Failed to get trends for: " + woeid);
+      logger.error("Failed to get trends for: " + woeid);
       System.exit(1);
       }
     return null;
